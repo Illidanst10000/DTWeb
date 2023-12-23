@@ -1,0 +1,148 @@
+
+* {
+    margin: 0;
+    padding: 0;
+}
+/* App */
+.App {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+}
+/* Board */
+.board {
+    /*background-image: url("assets/bg.jpg");*/
+    /*background-size: calc((96px + 5px) * 6) calc((96px) * 4 + (5px * 3));*/
+    /*background-repeat: no-repeat;*/
+    width: calc(96px * 6);
+    height: calc((96px + 41px) * 4);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.cell-component {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    outline: 2px solid #8B4513;
+}
+
+.under-cell {
+    width: 96px;
+    height: 40px;
+}
+
+
+/* Cell */
+
+.cell {
+    position: relative;
+    width: 96px;
+    height: 96px;
+}
+
+.cell img {
+    width: 96px;
+    height: 96px;
+}
+
+.selected::after, .available::after, .can-action::after {
+    position: absolute;
+    content: "";
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 2;
+}
+
+.selected::after {
+    animation: selected-glow 0.5s infinite alternate;
+}
+
+.available::after {
+    animation: available-glow 0.5s infinite alternate;
+}
+
+.can-action::after {
+    animation: can-action-glow 0.5s infinite alternate;
+}
+
+@keyframes selected-glow {
+    0% {
+        box-shadow: inset 0 0 10px 2px #00ff00;
+    }
+    100% {
+        box-shadow: inset 0 0 20px 4px #00ff00;
+    }
+}
+
+@keyframes available-glow {
+    0% {
+        box-shadow: inset 0 0 10px 2px #0077cc;
+    }
+    100% {
+        box-shadow: inset 0 0 20px 4px #0077cc;
+    }
+}
+
+@keyframes can-action-glow {
+    0% {
+        box-shadow: inset 0 0 10px 2px #620101;
+    }
+    100% {
+        box-shadow: inset 0 0 20px 4px #830000;
+    }
+}
+
+.tent  {
+    background-image: url('assets/tent.png');
+    width: 96px;
+    height: 96px;
+}
+
+.range {
+    background-image: url('assets/range.png');
+    width: 96px;
+    height: 96px;
+}
+
+.melee {
+    background-image: url('assets/melee.png');
+    width: 96px;
+    height: 96px;
+}
+
+/* CharStats */
+
+.character-stats {
+    width: 96px;
+    height: 40px;
+    background: linear-gradient(to bottom, #8B4513, #A52A2A);
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    color: white;
+
+}
+
+.char-text-sides {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 5px;
+}
+
+.char-text-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+
+

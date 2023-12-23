@@ -1,4 +1,5 @@
-export enum PlayerSides {
-    TOP = "top",
-    BOTTOM = "bottom"
+export enum CellType {
+    TENT = "tent",
+    RANGE = "range",
+    MELEE = "melee"
 }
