@@ -19,6 +19,7 @@ export class Lich extends Character implements MageCharacter{
         this.protectElemental = CharactersData.Lich.ProtectElemental
         this.initiative = CharactersData.Lich.Initiative
         this.hits = CharactersData.Lich.Hits
+        this.currentHits = CharactersData.Lich.Hits
         this.actions = CharactersData.Lich.Manevres
 
         this.magicType = CharactersData.Lich.Magic

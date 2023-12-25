@@ -18,6 +18,7 @@ export class Assassin extends Character implements RangeCharacter{
         this.initiative = CharactersData.Assassin.Initiative
         this.actions = CharactersData.Assassin.Manevres
         this.hits = CharactersData.Assassin.Hits
+        this.currentHits = CharactersData.Assassin.Hits
 
         this.attack = CharactersData.Assassin.AttackShot
 

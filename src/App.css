@@ -50,6 +50,16 @@
     height: 96px;
 }
 
+.cell div.image-with-overlay {
+    content: "";
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background-color: red;
+    opacity: 0.5;
+}
+
+
 .selected::after, .available::after, .can-action::after {
     position: absolute;
     content: "";
@@ -116,6 +126,7 @@
     width: 96px;
     height: 96px;
 }
+
 
 /* CharStats */
 

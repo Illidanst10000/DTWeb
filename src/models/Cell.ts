@@ -26,6 +26,13 @@ export class Cell {
         this.id = Math.random();
     }
 
+    isEnemyCellType(target: Cell): boolean {
+        if (target.cellType !== this.cellType) {
+            return true
+        }
+        return false
+    }
+
     isEmpty() {
         return this.character === null
     }

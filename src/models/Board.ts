@@ -60,6 +60,7 @@ export class Board {
                 }
             });
         });
+
         return allCharacters.sort((a, b) => b.initiative - a.initiative);
     }
 
@@ -71,9 +72,9 @@ export class Board {
     public addCharacters() {
         this.characterFactory.createCharacter(CharactersData.Knight.Name, PlayerType.FIRST, this.getCell(3,1))
         this.characterFactory.createCharacter(CharactersData.Assassin.Name, PlayerType.FIRST, this.getCell(2,1))
-        this.characterFactory.createCharacter(CharactersData.Shadow.Name, PlayerType.FIRST, this.getCell(2,0))
+        // this.characterFactory.createCharacter(CharactersData.Shadow.Name, PlayerType.FIRST, this.getCell(2,0))
         this.characterFactory.createCharacter(CharactersData.Lich.Name, PlayerType.SECOND, this.getCell(3,2))
-        this.characterFactory.createCharacter(CharactersData.Bishop.Name, PlayerType.SECOND, this.getCell(3,3))
-
+        // this.characterFactory.createCharacter(CharactersData.Bishop.Name, PlayerType.SECOND, this.getCell(3,3))
+        return this.getInitChar()
     }
 }

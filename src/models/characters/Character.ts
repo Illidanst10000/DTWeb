@@ -15,6 +15,10 @@ export interface RangeCharacter {
 
 }
 
+export interface CharacterHits {
+    name: string;
+    currentHits: number;
+}
 
 export class Character {
     playerType: PlayerType;
@@ -24,6 +28,7 @@ export class Character {
     id: number;
     description: string;
     hits: number;
+    currentHits: number;
     attack: number;
     defenceBlow: number;
     defenceShot: number;
@@ -36,7 +41,6 @@ export class Character {
     regen: number;
 
 
-
 constructor(playerType: PlayerType, cell: Cell) {
         this.playerType = playerType;
         this.cell = cell;
@@ -46,6 +50,7 @@ constructor(playerType: PlayerType, cell: Cell) {
         this.logo = null;
         this.description = '';
         this.hits = 0;
+        this.currentHits = 0
         this.defenceBlow = 0;
         this.defenceShot = 0;
         this.protectLife = 0;
@@ -59,10 +64,10 @@ constructor(playerType: PlayerType, cell: Cell) {
     }
 
     canMove(target: Cell) : boolean {
-        if (target.character?.playerType === this.playerType) {
+        if (target.playerType !== this.cell.playerType) {
             return false
         }
-        if (target.playerType !== this.playerType && !target.character) {
+        if (target.character?.playerType === this.playerType) {
             return false
         }
         if (this.cell.isEmptyVertical(target)) {
@@ -77,12 +82,26 @@ constructor(playerType: PlayerType, cell: Cell) {
         return false;
     }
 
+    canAttack(target: Cell) : boolean {
+        if (target.playerType !== this.playerType && target.character) {
+            return true
+        }
+        return false
+    }
+
     getCharacterCell() {
         return this.cell
     }
 
-    setHits(hits: number): void {
-        this.hits = hits
+    getCharHits (): number {
+        return this.hits
+    }
+
+    getCharAttack (): number {
+        return this.attack
+    }
+    setCurrentHits(hits: number): void {
+        this.currentHits = hits
     }
 
     moveCharacter(target: Cell) {

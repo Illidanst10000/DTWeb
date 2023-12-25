@@ -2,7 +2,7 @@ import React, {FC, useEffect, useState} from 'react';
 import CellComponent from "./CellComponent";
 import {Board} from "../models/Board";
 import {Cell} from "../models/Cell";
-import {Character} from "../models/characters/Character";
+import {Character, CharacterHits} from "../models/characters/Character";
 import AttackTurnService from "../services/AttackTurnService";
 import CharacterStatsComponent from "./CharacterStatsComponent";
 import underCellLogo from "./../assets/undercell.png"
@@ -10,29 +10,48 @@ import underCellLogo from "./../assets/undercell.png"
 interface BoardProps {
     board: Board;
     setBoard: (board: Board) => void;
+    currentCharacter: Character | null
+    setCurrentCharacter: (character: Character) => void
+    charsCurrentHits: CharacterHits[] | null
+    setCharsCurrentHits: (characterHits: CharacterHits[]) => void
 }
 
-const BoardComponent: FC<BoardProps> = ({board, setBoard}) => {
+const BoardComponent: FC<BoardProps> = ({board, setBoard, currentCharacter, setCurrentCharacter,
+                                        charsCurrentHits, setCharsCurrentHits }) => {
 
     const [selectedCell, setSelectedCell] = useState<Cell | null>(null)
-    const [currentCharacter, setCurrentCharacter] = useState<Character | null>(null);
 
-    function initCurrentChar() {
-        const initialCharacter = board.getInitChar()
-        setCurrentCharacter(initialCharacter);
-    }
-    function click(cell: Cell) {
-        if (selectedCell && selectedCell !== cell && selectedCell.character?.canMove(cell)) {
-            selectedCell.moveCharacter(cell)
-            setSelectedCell(null)
-        } else {
-            setSelectedCell(cell)
-        }
-    }
+    useEffect(() => {
+        setSelectedCell(currentCharacter?.cell ?? null)
+    }, [currentCharacter])
 
     useEffect(() => {
         highlightCells()
     }, [selectedCell])
+
+    function click(cell: Cell) {
+        if (selectedCell && selectedCell !== cell && selectedCell.character?.canAttack(cell)) {
+            const updatedTargetHits = AttackTurnService.attack(selectedCell, cell)
+            const charsHits = (charsCurrentHits ?? []).map((char) => {
+                if (char.name === updatedTargetHits.name) {
+                    return {
+                        ...char,
+                        currentHits: updatedTargetHits.currentHits
+                    };
+                } else {
+                    return char
+                }
+            })
+            setCharsCurrentHits(charsHits)
+        }
+        else if (selectedCell && selectedCell !== cell && selectedCell.character?.canMove(cell)) {
+            selectedCell.moveCharacter(cell)
+            setSelectedCell(null)
+        } else {
+            setSelectedCell(cell)
+        } // delete this
+    }
+
 
     function highlightCells() {
         board.highlightCells(selectedCell)
@@ -44,7 +63,6 @@ const BoardComponent: FC<BoardProps> = ({board, setBoard}) => {
         setBoard(newBoard)
     }
 
-
     return (
         <div className="board">
             {board.cells.map((row, index) =>
@@ -55,6 +73,11 @@ const BoardComponent: FC<BoardProps> = ({board, setBoard}) => {
                                 click={click}
                                 cell={cell}
                                 selected={cell.x === selectedCell?.x && cell.y === selectedCell?.y}
+                                currentCharHits={
+                                    cell.character && charsCurrentHits
+                                        ? charsCurrentHits.find(char => char.name === cell.character?.name)?.currentHits || null
+                                        : null
+                                }
                             />
                             {cell.character
                                 ? <CharacterStatsComponent char={cell.character}/>
@@ -69,16 +92,3 @@ const BoardComponent: FC<BoardProps> = ({board, setBoard}) => {
 
 export default BoardComponent;
 
-// массив персонажей отсортирован. берем массив, самый большой по инициативе чар устанавливается как текущий чар и выделяется.
-// когда чар походит и его маневры = 0 он удаляется из массива, при обновлении массива вызывается по юзэфекту функция смены чара на следующего.
-// когда чары в массиве заканчиваются берем новый массив текущих персонажей и прогоняем по кругу.
-
-// массив персонажей получаем при первом появлении доски и при пустом массиве персонажей
-//
-// useEffect(() => {
-//     if (currentCharacter && currentCharacter.actions === 0) {
-//         const currentIndex = allChars.indexOf(currentCharacter);
-//         const nextCharacter = allChars[currentIndex + 1] || allChars[0];
-//         setCurrentCharacter(nextCharacter);
-//     }
-// }, [currentCharacter, allChars]);

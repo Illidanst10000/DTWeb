@@ -19,6 +19,7 @@ export class Knight extends Character implements MeleeCharacter {
         this.protectElemental = CharactersData.Knight.ProtectElemental
         this.initiative = CharactersData.Knight.Initiative
         this.hits = CharactersData.Knight.Hits
+        this.currentHits = CharactersData.Knight.Hits
         this.actions = CharactersData.Knight.Manevres
 
     }

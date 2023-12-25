@@ -19,6 +19,7 @@ export class Shadow extends Character implements MageCharacter{
         this.protectElemental = CharactersData.Shadow.ProtectElemental
         this.initiative = CharactersData.Shadow.Initiative
         this.hits = CharactersData.Shadow.Hits
+        this.currentHits = CharactersData.Shadow.Hits
         this.actions = CharactersData.Shadow.Manevres
 
         this.magicType = CharactersData.Shadow.Magic
