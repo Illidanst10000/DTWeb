@@ -15,10 +15,15 @@ export class Bishop extends Character implements MageCharacter {
         this.protectLife = CharactersData.Bishop.ProtectLife
         this.protectDeath = CharactersData.Bishop.ProtectDeath
         this.protectElemental = CharactersData.Bishop.ProtectElemental
-        this.initiative = CharactersData.Bishop.Initiative
+
         this.hits = CharactersData.Bishop.Hits
         this.currentHits = CharactersData.Bishop.Hits
+
+        this.initiative = CharactersData.Bishop.Initiative
+        this.currentInitiative = CharactersData.Bishop.Initiative
+
         this.actions = CharactersData.Bishop.Manevres
+        this.currentActions = CharactersData.Bishop.Manevres
 
         this.magicType = CharactersData.Bishop.Magic
         this.magicDirection = CharactersData.Bishop.MagicDirection

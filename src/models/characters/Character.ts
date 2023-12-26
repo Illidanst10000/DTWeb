@@ -15,55 +15,63 @@ export interface RangeCharacter {
 
 }
 
-export interface CharacterHits {
-    name: string;
-    currentHits: number;
-}
-
 export class Character {
     playerType: PlayerType;
     logo: typeof logo | null;
+    persona: typeof logo | null;
     cell: Cell;
     name: string;
     id: number;
     description: string;
-    hits: number;
-    currentHits: number;
-    attack: number;
     defenceBlow: number;
     defenceShot: number;
     protectLife: number;
     protectDeath: number;
     protectElemental: number;
-    initiative: number;
-    actions: number;
     vampirism: number;
     regen: number;
 
+    hits: number;
+    currentHits: number;
 
-constructor(playerType: PlayerType, cell: Cell) {
+    initiative: number;
+    currentInitiative: number;
+    actions: number;
+    currentActions: number;
+    attack: number;
+
+
+
+    constructor(playerType: PlayerType, cell: Cell) {
         this.playerType = playerType;
         this.cell = cell;
         this.cell.character = this;
         this.id = Math.random();
         this.name = '';
         this.logo = null;
+        this.persona = null;
         this.description = '';
-        this.hits = 0;
-        this.currentHits = 0
         this.defenceBlow = 0;
         this.defenceShot = 0;
         this.protectLife = 0;
         this.protectDeath = 0;
         this.protectElemental = 0;
-        this.initiative = 0;
-        this.actions = 0;
         this.vampirism = 0;
         this.regen = 0;
+
+        this.hits = 0;
+        this.currentHits = 0
+
+        this.initiative = 0;
+        this.currentInitiative = 0;
+
+        this.actions = 0;
+        this.currentActions = 0;
+
         this.attack = 0;
     }
 
-    canMove(target: Cell) : boolean {
+    canMove(target: Cell): boolean {
         if (target.playerType !== this.cell.playerType) {
             return false
         }
@@ -82,8 +90,20 @@ constructor(playerType: PlayerType, cell: Cell) {
         return false;
     }
 
-    canAttack(target: Cell) : boolean {
+    canAttack(target: Cell): boolean {
         if (target.playerType !== this.playerType && target.character) {
+            return true
+        }
+        return false
+    }
+
+    resetStats() {
+        this.currentActions = this.actions
+        this.currentInitiative = this.initiative
+    }
+
+    hasActions(): boolean {
+        if (this.currentActions > 0) {
             return true
         }
         return false
@@ -93,13 +113,18 @@ constructor(playerType: PlayerType, cell: Cell) {
         return this.cell
     }
 
-    getCharHits (): number {
-        return this.hits
+    useAction() {
+        this.currentActions = this.currentActions - 1;
     }
 
-    getCharAttack (): number {
+    getCurrentHits(): number {
+        return this.currentHits
+    }
+
+    getCharAttack(): number {
         return this.attack
     }
+
     setCurrentHits(hits: number): void {
         this.currentHits = hits
     }

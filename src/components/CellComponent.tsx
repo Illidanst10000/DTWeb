@@ -1,17 +1,18 @@
-import React, {FC} from 'react';
+import React, {FC, useRef} from 'react';
 import {Cell} from "../models/Cell";
-import {CharacterHits} from "../models/characters/Character";
+
 
 interface CellProps {
     cell: Cell;
     selected: boolean;
     click: (cell: Cell) => void;
-    currentCharHits: number | null;
+    onCellHover: (cell: Cell) => void
 
 }
-const CellComponent: FC<CellProps> = ({cell, selected, click, currentCharHits}) => {
+const CellComponent: FC<CellProps> = ({cell, selected, click, onCellHover}) => {
 
     const charMissingHits = cell.character ? cell.character?.hits - cell.character?.currentHits : 0
+
     const dynamicHeight = charMissingHits > 0 && cell.character  ? (charMissingHits / cell.character?.hits) * 100 + "%" : "0%";
     const overlayStyle = {
         height: dynamicHeight,
@@ -27,6 +28,7 @@ const CellComponent: FC<CellProps> = ({cell, selected, click, currentCharHits}) 
             cell.available && !cell.character ? "available" : '',
         ].join(' ')}
              onClick={() => click(cell)}
+             onMouseEnter={() => onCellHover(cell)}
         >
             {/*{cell.character?.logo && <img src={cell.character.logo} className="image-with-overlay"/>}*/}
             {cell.character?.logo && (

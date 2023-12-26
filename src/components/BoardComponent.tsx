@@ -2,24 +2,27 @@ import React, {FC, useEffect, useState} from 'react';
 import CellComponent from "./CellComponent";
 import {Board} from "../models/Board";
 import {Cell} from "../models/Cell";
-import {Character, CharacterHits} from "../models/characters/Character";
+import {Character} from "../models/characters/Character";
 import AttackTurnService from "../services/AttackTurnService";
 import CharacterStatsComponent from "./CharacterStatsComponent";
 import underCellLogo from "./../assets/undercell.png"
+import {PlayerType} from "../models/PlayerType";
 
 interface BoardProps {
     board: Board;
     setBoard: (board: Board) => void;
     currentCharacter: Character | null
     setCurrentCharacter: (character: Character) => void
-    charsCurrentHits: CharacterHits[] | null
-    setCharsCurrentHits: (characterHits: CharacterHits[]) => void
+    setWinner: (playerType: PlayerType) => void
+    setHoveredCell: (cell: Cell) => void
+
 }
 
-const BoardComponent: FC<BoardProps> = ({board, setBoard, currentCharacter, setCurrentCharacter,
-                                        charsCurrentHits, setCharsCurrentHits }) => {
+const BoardComponent: FC<BoardProps> = ({board, setBoard, currentCharacter,
+                                            setCurrentCharacter, setWinner, setHoveredCell}) => {
 
     const [selectedCell, setSelectedCell] = useState<Cell | null>(null)
+
 
     useEffect(() => {
         setSelectedCell(currentCharacter?.cell ?? null)
@@ -30,28 +33,41 @@ const BoardComponent: FC<BoardProps> = ({board, setBoard, currentCharacter, setC
     }, [selectedCell])
 
     function click(cell: Cell) {
-        if (selectedCell && selectedCell !== cell && selectedCell.character?.canAttack(cell)) {
-            const updatedTargetHits = AttackTurnService.attack(selectedCell, cell)
-            const charsHits = (charsCurrentHits ?? []).map((char) => {
-                if (char.name === updatedTargetHits.name) {
-                    return {
-                        ...char,
-                        currentHits: updatedTargetHits.currentHits
-                    };
-                } else {
-                    return char
+
+        if (selectedCell && selectedCell.character) {
+
+            if (selectedCell.character.canMove(cell)) {
+                AttackTurnService.move(selectedCell, cell);
+                setSelectedCell(cell);
+
+            } else if (selectedCell === cell) {
+                AttackTurnService.skip(selectedCell);
+
+            } else if (selectedCell.character.canAttack(cell)) {
+                const updatedTargetHits = AttackTurnService.attack(selectedCell, cell);
+
+                if (updatedTargetHits === 0) {
+                    cell.removeCharacter();
+                    if (board.handleWinner()) {
+                        board.handleWinner() === PlayerType.FIRST
+                            ? setWinner(PlayerType.FIRST)
+                            : setWinner(PlayerType.SECOND)
+                    }
+                    highlightCells();
                 }
-            })
-            setCharsCurrentHits(charsHits)
+            }
+            switchTurn()
+            updateBoard();
         }
-        else if (selectedCell && selectedCell !== cell && selectedCell.character?.canMove(cell)) {
-            selectedCell.moveCharacter(cell)
-            setSelectedCell(null)
-        } else {
-            setSelectedCell(cell)
-        } // delete this
     }
 
+    function handleCellHover(cell: Cell) {
+        setHoveredCell(cell);
+    }
+    function switchTurn() {
+        const nextChar = board.getNextChar();
+        setCurrentCharacter(nextChar);
+    }
 
     function highlightCells() {
         board.highlightCells(selectedCell)
@@ -73,11 +89,7 @@ const BoardComponent: FC<BoardProps> = ({board, setBoard, currentCharacter, setC
                                 click={click}
                                 cell={cell}
                                 selected={cell.x === selectedCell?.x && cell.y === selectedCell?.y}
-                                currentCharHits={
-                                    cell.character && charsCurrentHits
-                                        ? charsCurrentHits.find(char => char.name === cell.character?.name)?.currentHits || null
-                                        : null
-                                }
+                                onCellHover={handleCellHover}
                             />
                             {cell.character
                                 ? <CharacterStatsComponent char={cell.character}/>

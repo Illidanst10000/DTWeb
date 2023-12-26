@@ -10,8 +10,102 @@
     display: flex;
     justify-content: center;
     align-items: center;
-
 }
+
+.winner-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 8px;
+    font-size: 18px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+    animation: fadeIn 0.5s ease-in-out; /* Анимация появления */
+}
+
+.player-1 {
+    color: #ff5733; /* Цвет для игрока 1 */
+}
+
+.player-2 {
+    color: #336aff; /* Цвет для игрока 2 */
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Info Component */
+
+.info-component {
+    height: calc((96px + 41px) * 4);
+    width: 380px;
+    background-image: url("assets/info.png");
+    /*background-size: calc((96px + 5px) * 6) calc((96px) * 4 + (5px * 3));*/
+    background-repeat: no-repeat;
+    position: relative;
+}
+
+.info-component img {
+
+    position: absolute;
+    right: 30%;
+    top: 10%;
+}
+
+.info-stats {
+    position: absolute;
+    bottom: 10%;
+    left: 30%; /* Положение по центру относительно .info-component */
+    width: 130px;
+    padding: 10px;
+    border: 1px solid black;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.info-stats::after {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    opacity: 0.1;
+    z-index: 2;
+}
+
+.info-stats > div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px; /* Расстояние между ключом и значением */
+    width: 130px; /* Ширина контейнера с ключом и значением */
+}
+
+.info-stats .info-name {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.info-stats span {
+    color: white;
+    font-weight: bold;
+}
+
+.info-text-sides {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
 /* Board */
 .board {
     /*background-image: url("assets/bg.jpg");*/

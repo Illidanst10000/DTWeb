@@ -1,8 +1,11 @@
 import knightLogo from '../../assets/icons/knight.png';
 import bishopLogo from '../../assets/icons/bishop.png';
 import assassinLogo from '../../assets/icons/assassin.png';
+import assassinPersona from '../../assets/persones/img_86.png';
 import lichLogo from '../../assets/icons/lich.png';
+import lichPersona from '../../assets/persones/img_55.png';
 import shadowLogo from '../../assets/icons/shadow.png';
+import knightPersona from '../../assets/persones/img_0.png'
 
 export const CharactersData: Record<string, any> = {
     "CHARACTER": {
@@ -24,6 +27,7 @@ export const CharactersData: Record<string, any> = {
         "Name": "Knight",
         "Descript": "Участник множества жестоких битв, Рыцарь обладает превосходным опытом ведения боя.",
         "IconIndex": knightLogo,
+        "Persona": knightPersona,
         "Hits": 80,
         "AttackBlow": 45,
         "DefenceBlow": 15,
@@ -1087,6 +1091,7 @@ export const CharactersData: Record<string, any> = {
         "MagicDirection": "ToAll",
 
         "IconIndex": lichLogo,
+        "Persona": lichPersona,
         "Bonus": "Unvulnerabe",
         "NextUnit1": "Архилич",
         "NextUnit1Level": 1,
@@ -1604,6 +1609,7 @@ export const CharactersData: Record<string, any> = {
         "Descript": "Специально обученные стрелки-асасины нередко решают исход битвы при помощи своего оружия.",
 
         "IconIndex": assassinLogo,
+        "Persona": assassinPersona,
         "Bonus": "Poison",
         "Hits": 65,
         "AttackShot": 35,

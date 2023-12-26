@@ -2,6 +2,7 @@ import {CellType} from "./CellType";
 import {Character} from "./characters/Character";
 import {Board} from "./Board";
 import {PlayerType} from "./PlayerType";
+import AttackTurnService from "../services/AttackTurnService";
 
 export class Cell {
 
@@ -15,7 +16,8 @@ export class Cell {
     id: number
 
 
-    constructor(x: number, y: number, character: Character | null, cellType: CellType, playerType: PlayerType, board: Board) {
+    constructor(x: number, y: number, character: Character | null, cellType: CellType, playerType: PlayerType,
+                board: Board) {
         this.x = x;
         this.y = y;
         this.character = character;
@@ -84,9 +86,14 @@ export class Cell {
     moveCharacter(target: Cell) {
         if(this.character && this.character?.canMove(target)) {
             this.character?.moveCharacter(target)
+            AttackTurnService.handleCharTurn(this.character)
             target.setCharacter(this.character)
             this.character = null;
         }
+    }
+
+    removeCharacter() {
+        this.character = null;
     }
 
 }

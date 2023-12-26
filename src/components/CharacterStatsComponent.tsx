@@ -18,14 +18,16 @@ const CharacterStatsComponent: FC<CharStatsProps> = ({char}) => {
             </div>
             <div className="char-text-sides">
                 <span>
-                    {'Mnvr: ' + char.actions}
+                    {'Mnvr: ' + char.currentActions}
                 </span>
                 <span>
-                    {'Ini: ' + char.initiative}
+                    {'Ini: ' + char.currentInitiative}
                 </span>
             </div>
             <div className="char-text-center">
-                {'Hits: ' + char.hits}
+                {" Hits: "}
+                {char.hits !== char.currentHits ? char.currentHits + '/' : ''}
+                { char.hits}
             </div>
         </div>
     );

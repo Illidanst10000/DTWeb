@@ -1,52 +1,45 @@
-import React, {StrictMode, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import BoardComponent from "./components/BoardComponent";
 import "./App.css"
 import {Board} from "./models/Board";
-import {Character, CharacterHits} from "./models/characters/Character";
+import {Character} from "./models/characters/Character";
+import {PlayerType} from "./models/PlayerType";
+import InfoComponent from "./components/InfoComponent";
+import {Cell} from "./models/Cell";
 
 
 const App = () => {
     const [board, setBoard] = useState(new Board())
     const [currentCharacter, setCurrentCharacter] = useState<Character | null>(null)
-    const [charsCurrentHits, setCharsCurrentHits] = useState<CharacterHits[] | null>(null)
+    const [hoveredCell, setHoveredCell] = useState<Cell | null>(null)
+    const [winner, setWinner] = useState<PlayerType | null> (null)
 
     useEffect(() => {
         restart()
-
     }, [])
 
     function restart() {
         const newBoard = new Board();
         newBoard.initCells()
         setCurrentCharacter(newBoard.addCharacters())
-        initCharsCurrentHits()
         setBoard(newBoard)
-    }
-
-    function initCharsCurrentHits() {
-        const chars: Character[] = board.getAllCharacters()
-        const charsHits: CharacterHits[] = [];
-
-        chars.forEach((char) => {
-            const characterHits: CharacterHits = {
-                name: char.name,
-                currentHits: char.hits,
-            };
-            charsHits.push(characterHits);
-        })
-
-        setCharsCurrentHits(charsHits)
     }
 
     return (
 
         <div className="App">
+            <InfoComponent hoveredCell={hoveredCell}/>
             <BoardComponent board={board} setBoard={setBoard}
                             currentCharacter={currentCharacter}
                             setCurrentCharacter={setCurrentCharacter}
-                            charsCurrentHits={charsCurrentHits}
-                            setCharsCurrentHits={setCharsCurrentHits}
+                            setWinner={setWinner}
+                            setHoveredCell={setHoveredCell}
             />
+            {winner && (
+                <div className={`winner-message ${winner === PlayerType.FIRST ? 'player-1' : 'player-2'}`}>
+                    Победил игрок {winner}! Поздравляем
+                </div>
+            )}
         </div>
     );
 };
