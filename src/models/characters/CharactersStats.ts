@@ -101,7 +101,7 @@ export class ModifyDefence {
         nDefence.deathMagic = this.deathMagic.apply(defence.deathMagic);
         nDefence.elementalMagic = this.elementalMagic.apply(defence.elementalMagic);
         nDefence.lifeMagic = this.lifeMagic.apply(defence.lifeMagic);
-        nDefence.handPercent = this.handPercent.apply(defence.handPercent);
+        nDefence.meleePercent = this.handPercent.apply(defence.meleePercent);
         nDefence.rangePercent = this.rangePercent.apply(defence.rangePercent);
         nDefence.magicUnits = this.magicUnits.apply(defence.magicUnits);
         nDefence.rangeUnits = this.rangeUnits.apply(defence.rangeUnits);

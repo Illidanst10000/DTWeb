@@ -1,7 +1,9 @@
 import {PlayerType} from "../PlayerType";
 import logo from '../../assets/melee.jpg'
 import {Cell} from "../Cell";
-import {Modify, ModifyCharStats} from "./CharactersStats";
+import {ModifyCharStats} from "./CharactersStats";
+import {AttackMagic, DisableMagic, Effect, EffectKind, ElementalSupport, HealMagic} from "../effects/Effect";
+import {calcPerc} from "../../utils";
 
 export enum MagicDirection {
     ToAll = 'ToAll',
@@ -24,15 +26,15 @@ export enum MagicType {
 }
 
 export type MagicTypeWithDirection = {
-    type: MagicType;
-    direction: MagicDirection;
+    type: MagicType | null;
+    direction: MagicDirection | null;
 };
 
 export class CharDefence {
     deathMagic: number;
     elementalMagic: number;
     lifeMagic: number;
-    handPercent: number;
+    meleePercent: number;
     rangePercent: number;
     magicUnits: number;
     meleeUnits: number;
@@ -42,7 +44,7 @@ export class CharDefence {
         this.deathMagic = deathMagic;
         this.elementalMagic = elementalMagic;
         this.lifeMagic = lifeMagic;
-        this.handPercent = handPercent;
+        this.meleePercent = handPercent;
         this.rangePercent = rangePercent;
         this.magicUnits = magicUnits;
         this.meleeUnits = meleeUnits
@@ -107,8 +109,9 @@ export class CharInfo {
     icon: typeof logo | null;
     persona: typeof logo | null;
     charType: CharType;
-    magicType: MagicTypeWithDirection | null
-    constructor(name: string, description: string, icon: typeof logo | null, persona: typeof logo | null, charType: CharType, magicType: MagicTypeWithDirection | null, playerType: PlayerType, cell: Cell | null) {
+    magicType: MagicType | null
+    constructor(name: string, description: string, icon: typeof logo | null, persona: typeof logo | null,
+                charType: CharType, magicType: MagicType | null, playerType: PlayerType, cell: Cell | null) {
         this.name = name;
         this.playerType = playerType;
         this.cell = cell;
@@ -141,12 +144,12 @@ export class Character {
     modified: CharStats;
     info: CharInfo;
     inventory: CharInventory;
-    effects: []; // Здесь будут эффекты. Пока просто массивом.
+    effects: Effect[]; // Здесь будут эффекты. Пока просто массивом.
     army: string; // Здесь будет армия позже. Пока просто стринг
     modify: ModifyCharStats;
     bonus: []; // Здесь будут бонусы. Пока просто массивом.
 
-    constructor(stats: CharStats, info: CharInfo, inventory: CharInventory, army: string, bonus: [], effects: []) {
+    constructor(stats: CharStats, info: CharInfo, inventory: CharInventory, army: string, bonus: [], effects: Effect[]) {
         this.stats = stats;
         this.modified = stats;
         this.info = info;
@@ -156,63 +159,99 @@ export class Character {
         this.modify = new ModifyCharStats();
         this.bonus = bonus;
 
-        this.recalc();
+        this.reсalc();
     }
 
-    recalc() {
+    reсalc() {
         this.modified = this.modify.apply(this.stats);
     }
 
     healChar(target: Character, damage: CharPower, magicType: MagicType): boolean {
-        switch (true) {
-            case ([CharType.People].includes(target.info.charType) && magicType === MagicType.Death)
-            : return false
-            case ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life)
-            : return false
-            default:
-                return target.heal(damage.magic)
+        if ([CharType.People].includes(target.info.charType) && magicType === MagicType.Death) {
+            return false;
         }
+        if ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life) {
+            return false;
+        }
+
+        return target.heal(damage.magic);
     }
 
     blessChar(target: Character, damage: CharPower, magicType: MagicType): boolean {
-        switch (true) {
-            case ([CharType.People].includes(target.info.charType) && magicType === MagicType.Death)
-            : return false
-            case ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life)
-            : return false
-            // case (!target.hasEffect(MageSupport)): target.addEffect(...... // logic with bless) return true
-            default:
-                return false
+        if ([CharType.People].includes(target.info.charType) && magicType === MagicType.Death) {
+            return false;
         }
+        if ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life) {
+            return false;
+        }
+        if (target.hasEffectKind(EffectKind.MageSupport)) {
+            return false;
+        }
+
+        target.addEffect(new HealMagic(damage.magic));
+        return true
     }
 
     healBless(target: Character, damage: CharPower, magicType: MagicType): boolean {
-        switch (true) {
-            case ([CharType.People].includes(target.info.charType) && magicType === MagicType.Death)
-            : return false
-            case ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life)
-            : return false
-            case (this.healChar(target, damage, magicType))
-            : return this.blessChar(target, damage, magicType);
-            default:
-                return false
+        if ([CharType.People].includes(target.info.charType) && magicType === MagicType.Death) {
+            return false;
         }
+        if ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life) {
+            return false;
+        }
+
+        return this.healChar(target, damage, magicType) && this.blessChar(target, damage, magicType);
     }
 
-    elementalBless() {
+    elementalBless(target: Character, damage: CharPower): boolean {
+        if (target.hasEffectKind(EffectKind.MageSupport)) {
+            return false
+        }
 
+        target.addEffect(new ElementalSupport(damage.magic))
+        return true
     }
 
-    magicCurse() {
+    magicCurse(target: Character, damage: CharPower, magicType: MagicType) :boolean {
+        if (target.hasEffectKind(EffectKind.MageCurse)) {
+            return false
+        }
+        if (!this.info.magicType) {
+            return false
+        }
+        if ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life) {
+            damage.magic *= 2;
+        }
 
+        target.addEffect(new AttackMagic(target.correctDamage(damage, this.info.magicType).magic))
+        return true;
     }
 
-    elementalCurse() {
+    elementalCurse(target: Character, damage: CharPower): boolean {
+        if (target.hasEffectKind(EffectKind.MageCurse)) {
+            return false
+        }
 
+        if (!this.info.magicType) {
+            return false
+        }
+
+        target.addEffect(new DisableMagic(target.correctDamage(damage, this.info.magicType).magic))
+        return true;
     }
 
-    magicAttack() {
+    magicAttack(target: Character, damage: CharPower, magicType: MagicType) {
+        if ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life) {
+            damage.magic *= 2;
+        }
 
+        if (this.magicCurse(target, damage, magicType)) {
+            return false
+        }
+
+        damage.melee = 0;
+        damage.range = 0;
+        //TODO: require beingAttacked func
     }
 
     elementalAttack() {
@@ -243,8 +282,21 @@ export class Character {
 
     }
 
-    addEffect() {
+    hasEffectKind(effectKind: EffectKind): boolean {
+        this.effects.forEach((effect) => {
+            if (effect.getKind && effect.getKind() === effectKind) {
+                return true
+            }
+        })
+        return false
+    }
 
+    addEffect(effect: Effect): boolean {
+        this.effects.push(effect);
+        const lastEffect = this.effects[this.effects.length - 1];
+        lastEffect.updateStats(this)
+        this.recalc()
+        return true
     }
 
     addItem() {
@@ -263,12 +315,48 @@ export class Character {
 
     }
 
-    underAttack() {
+    underAttack(sender: Character, damage: CharPower) {
 
     }
 
-    correctDamage() {
+    correctDamage(damage: CharPower, magicType: MagicType): CharPower {
+        const { magic, range, melee } = damage;
+        const { deathMagic, elementalMagic, lifeMagic, meleePercent, rangePercent,
+            magicUnits, meleeUnits, rangeUnits } = this.modified.defence;
+        const basicPercentage = 100;
 
+        const magicPercent =
+            magicType === MagicType.Life ? lifeMagic :
+            magicType === MagicType.Death ? deathMagic :
+            magicType === MagicType.Elemental ? elementalMagic : 0;
+
+        const adjustDamage = (damage: number, units: number) => Math.max(damage - units, 0);
+        const adjustDefence = (defence: number) => Math.max(basicPercentage - defence, 0);
+
+        const adjustedMagic = adjustDamage(magic, magicUnits);
+        const adjustedRange = adjustDamage(range, rangeUnits);
+        const adjustedMelee = adjustDamage(melee, meleeUnits);
+
+        return {
+            magic: calcPerc(adjustedMagic, adjustDefence(magicPercent)),
+            range: calcPerc(adjustedRange, adjustDefence(rangePercent)),
+            melee: calcPerc(adjustedMelee, adjustDefence(meleePercent))
+        };
+
+        // const adjustedMagicDef = Math.max(basicPercentage - magicDef, 0);
+        // const adjustedMagic = Math.max(damage.magic - magicUnits, 0);
+        //
+        // const adjustedRangeDef = Math.max(basicPercentage - rangePercent, 0);
+        // const adjustedRange = Math.max(damage.range - rangeUnits, 0);
+        //
+        // const adjustedMeleeDef = Math.max(basicPercentage - meleePercent, 0);
+        // const adjustedMelee = Math.max(damage.melee - meleeUnits, 0);
+        //
+        // return {
+        //     magic: calcPerc(adjustedMagic, adjustedMagicDef),
+        //     range: calcPerc(adjustedRange, adjustedRangeDef),
+        //     melee: calcPerc(adjustedMelee, adjustedMeleeDef)
+        // }
     }
 
     tick() {

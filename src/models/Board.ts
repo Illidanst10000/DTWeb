@@ -1,50 +1,20 @@
 import {Cell} from "./Cell";
-import {CellType} from "./CellType";
+import {CellType} from "./Cell";
 import {PlayerType} from "./PlayerType";
 import {CharacterFactory} from "../Factories/CharacterFactory";
 import {Character} from "./characters/Character";
 import {CharactersData} from "./characters/СharactersData";
+import {Army} from "./armies/Army";
 
 export class Board {
 
-    cells: Cell[][] = []
+    armies: Army[]
 
-    private characterFactory: CharacterFactory = new CharacterFactory();
-    public initCells() {
-        for (let i = 0; i < 4; i++) {
-            const row: Cell[] = []
-            const playerType = i < 2 ? PlayerType.FIRST : PlayerType.SECOND;
-            for (let j = 0; j < 6; j++) {
-                if (j === 0 || j === 5) {
-                    row.push(new Cell(j, i,null, CellType.TENT, playerType, this))
-                    continue;
-                }
-                if (i === 0 || i === 3) {
-                    row.push(new Cell(j, i,null, CellType.RANGE, playerType, this))
-                } else {
-                    row.push(new Cell(j, i,null, CellType.MELEE, playerType, this))
-                }}
-
-
-            this.cells.push(row)
-        }
+    constructor(armies: Army[]) {
+        this.armies = armies
     }
 
-    public highlightCells(selectedCell: Cell | null) {
-        for (let i = 0; i < this.cells.length; i++) {
-            const row = this.cells[i]
-            for (let j = 0; j < row.length; j++) {
-                const target = row[j]
-                
-                target.available = !!selectedCell?.character?.canMove(target)
-
-                if (!target.available) {
-                    target.available = !!selectedCell?.character?.canAttack(target)
-                }
-
-            }
-        }
-    }
+        // private characterFactory: CharacterFactory = new CharacterFactory();
 
     public getCopyBoard(): Board {
         const newBoard = new Board()
@@ -52,9 +22,7 @@ export class Board {
         return newBoard
     }
 
-    getCell(x: number, y: number) {
-        return this.cells[y][x]
-    }
+
 
     getAllCharacters(): Character[] {
         const allCharacters: Character[] = [];

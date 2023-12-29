@@ -11,7 +11,7 @@ export enum EffectKind {
     Poison,
 }
 
-interface Effect {
+export interface Effect {
     updateStats(char: Character): void;
     onTick?(): boolean;
     onBattleEnd?(): boolean;
@@ -210,12 +210,10 @@ export class ElementalSupport implements Effect, EffectInfo {
 export class AttackMagic implements Effect, EffectInfo {
     lifetime: number;
     magicPower: number;
-    magicType: MagicType;
 
-    constructor(magicPower: number, magicType: MagicType) {
+    constructor(magicPower: number) {
         this.lifetime = 1;
         this.magicPower = magicPower;
-        this.magicType = magicType;
     }
 
     updateStats(char: Character): void {

@@ -1,8 +1,15 @@
-import {CellType} from "./CellType";
+
 import {Character} from "./characters/Character";
 import {Board} from "./Board";
 import {PlayerType} from "./PlayerType";
 import AttackTurnService from "../services/AttackTurnService";
+import {Army} from "./armies/Army";
+
+export enum CellType {
+    TENT = "tent",
+    RANGE = "range",
+    MELEE = "melee"
+}
 
 export class Cell {
 
@@ -11,19 +18,19 @@ export class Cell {
     character: Character | null;
     readonly cellType: CellType;
     readonly playerType: PlayerType;
-    board: Board;
+    army: Army;
     available: boolean;
     id: number
 
 
     constructor(x: number, y: number, character: Character | null, cellType: CellType, playerType: PlayerType,
-                board: Board) {
+                army: Army) {
         this.x = x;
         this.y = y;
         this.character = character;
         this.cellType = cellType;
         this.playerType = playerType
-        this.board = board;
+        this.army = army;
         this.available = false;
         this.id = Math.random();
     }
