@@ -128,6 +128,28 @@ export class CharInfo {
     }
 }
 
+export class CharPos {
+    x: number;
+    y: number;
+
+    constructor(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
+
+    getCoordinates() {
+        return [this.x, this.y]
+    }
+
+    getIndex() {
+        return this.x + this.y * Math.floor(12 / 2);
+    }
+    static empty() {
+        return new CharPos(0, 0);
+    }
+
+}
+
 export class CharInventory {
     items: [];
     constructor(items: []) {
@@ -159,10 +181,10 @@ export class Character {
         this.modify = new ModifyCharStats();
         this.bonus = bonus;
 
-        this.reсalc();
+        this.recalc();
     }
 
-    reсalc() {
+    recalc() {
         this.modified = this.modify.apply(this.stats);
     }
 
@@ -278,8 +300,16 @@ export class Character {
 
     }
 
-    isDead() {
+    isDead(): boolean {
+        if (this.modified.hp < 1) {
+            return true
+        }
+        return false
+    }
 
+    kill(): void {
+        this.stats.hp = -this.modified.hp;
+        this.recalc();
     }
 
     hasEffectKind(effectKind: EffectKind): boolean {

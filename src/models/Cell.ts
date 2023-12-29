@@ -35,6 +35,9 @@ export class Cell {
         this.id = Math.random();
     }
 
+    getPos(): number[] {
+        return [this.x, this.y]
+    }
     isEnemyCellType(target: Cell): boolean {
         if (target.cellType !== this.cellType) {
             return true
