@@ -1,5 +1,5 @@
-import {Character, MagicType} from "../characters/Character";
-import {Modify} from "../characters/CharactersStats";
+import {Character, CharStats, MagicType} from "../characters/Character";
+import {Modify, ModifyCharStats} from "../characters/CharactersStats";
 import {calcPerc} from "../../utils";
 
 export enum EffectKind {
@@ -300,3 +300,37 @@ export class Poison implements Effect, EffectInfo {
         return true;
     }
 }
+
+export class ToEndEffect implements Effect, EffectInfo {
+    lifetime: number;
+    modify: ModifyCharStats;
+
+    constructor(modify: ModifyCharStats) {
+        this.lifetime = 0;
+        this.modify = modify;
+    }
+
+    updateStats(char: Character): void {
+        char.modify.updateValues(this.modify)
+    }
+
+    finish(char: Character): boolean {
+        this.lifetime = 0;
+        return true
+    }
+
+    getKind(): EffectKind {
+        return EffectKind.Bonus;
+    }
+
+    isFinished(): boolean {
+        return !this.lifetime;
+    }
+
+    onBattleEnd(): boolean {
+        this.lifetime = 0;
+        return true
+    }
+}
+
+

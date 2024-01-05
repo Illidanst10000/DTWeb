@@ -1,7 +1,9 @@
 import {Character, CharPower} from "../characters/Character";
 import {calcPerc} from "../../utils";
+import {MoreMoves, ToEndEffect} from "../effects/Effect";
+import {Modify, ModifyCharStats, ModifyPower} from "../characters/CharactersStats";
 
-enum Bonuses {
+export enum Bonuses {
     DefencePiercing,
     Dodging, // Defence bonus: only 70% of the enemy's blows pass through the character's defence
     Fast, // Start bonus: on the first turn in a battle the character receives +1 manoeuvre ????????? maybe
@@ -26,7 +28,7 @@ enum Bonuses {
     FlankStrike,
 }
 export class Bonus {
-    onAttack(bonus: Bonuses, damage: CharPower, receiver: Character, sender: Character): CharPower {
+    static onAttack(bonus: Bonuses, damage: CharPower, receiver: Character, sender: Character): CharPower {
         switch (bonus) {
             case (Bonuses.AncientVampiresGist | Bonuses.VampiresGist | Bonuses.DeadDodging | Bonuses.Dodging):
                 const dodgeRate = 70;
@@ -76,5 +78,26 @@ export class Bonus {
         }
     }
 
+    static onKill(bonus: Bonuses, damage: CharPower, receiver: Character, sender: Character): boolean {
+        if (bonus === Bonuses.Berserk) {
+            const percentRate = 10;
+            const charStats: ModifyCharStats = new ModifyCharStats();
 
+            charStats.damage.melee.updateValues(new Modify().add(percentRate));
+            charStats.damage.magic.updateValues(new Modify().add(percentRate));
+            charStats.damage.range.updateValues(new Modify().add(percentRate));
+
+            sender.addEffect(new ToEndEffect(charStats))
+            return true
+        }
+        return false
+    }
+
+    static onBattleStart(bonus: Bonuses, char: Character): boolean {
+        if (bonus === Bonuses.Fast || bonus === Bonuses.AncientVampiresGist || bonus === Bonuses.FastDead) {
+            char.addEffect(new MoreMoves())
+            return true
+        }
+        return false
+    }
 }

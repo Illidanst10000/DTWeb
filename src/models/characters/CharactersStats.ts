@@ -50,6 +50,7 @@ export class Modify {
     }
 
     updateValues(otherModify: Modify): void {
+
         if (otherModify.addV !== null) {
             this.addV = this.addV
                 ? this.addV + otherModify.addV

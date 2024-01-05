@@ -6,6 +6,7 @@ import {Character} from "./characters/Character";
 import {CharactersData} from "./characters/СharactersData";
 import {Army} from "./armies/Army";
 
+
 export class Board {
 
     armies: Army[]
@@ -23,6 +24,9 @@ export class Board {
     }
 
 
+    public fieldType(index: number) {
+        if (index === 0 | index === ())
+}
 
     getAllCharacters(): Character[] {
         const allCharacters: Character[] = [];

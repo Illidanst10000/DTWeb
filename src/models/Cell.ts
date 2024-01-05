@@ -3,12 +3,22 @@ import {Character} from "./characters/Character";
 import {Board} from "./Board";
 import {PlayerType} from "./PlayerType";
 import AttackTurnService from "../services/AttackTurnService";
-import {Army} from "./armies/Army";
+import {Army, armyStructure} from "./armies/Army";
 
 export enum CellType {
     TENT = "tent",
     RANGE = "range",
     MELEE = "melee"
+}
+
+export function fieldType(index: number): CellType {
+    if (index === 0 || index === armyStructure.maxChars / 2 - 1) {
+        return CellType.TENT
+    }
+    if (index < armyStructure.maxChars / 2) {
+        return CellType.RANGE
+    }
+    return CellType.MELEE
 }
 
 export class Cell {
@@ -34,6 +44,7 @@ export class Cell {
         this.available = false;
         this.id = Math.random();
     }
+
 
     getPos(): number[] {
         return [this.x, this.y]

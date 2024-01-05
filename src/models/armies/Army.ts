@@ -2,11 +2,12 @@ import {Cell, CellType} from "../Cell";
 import {PlayerType} from "../PlayerType";
 
 // TODO: Put the constant in the config. Change initCells() in Army to use configuration values.
-const armyStructure = {
+export const armyStructure = {
     frontRow: [CellType.TENT, CellType.MELEE, CellType.MELEE, CellType.MELEE, CellType.MELEE, CellType.TENT],
     rangeRow: [CellType.TENT, CellType.RANGE, CellType.RANGE, CellType.RANGE, CellType.RANGE, CellType.TENT],
     rows: 2,
     cells: 6,
+    maxChars: 12,
 }
 export class Army {
     cells: Cell[][] = [];

@@ -1,11 +1,14 @@
 import {PlayerType} from "../PlayerType";
 import logo from '../../assets/melee.jpg'
-import {Cell} from "../Cell";
+import {Cell, CellType, fieldType} from "../Cell";
 import {ModifyCharStats} from "./CharactersStats";
 import {AttackMagic, DisableMagic, Effect, EffectKind, ElementalSupport, HealMagic} from "../effects/Effect";
 import {calcPerc} from "../../utils";
+import {Army} from "../armies/Army";
+import {Bonus, Bonuses} from "../bonuses/Bonus";
 
 export enum MagicDirection {
+    ToAlly = 'ToAlly',
     ToAll = 'ToAll',
     ToEnemy = 'ToEnemy',
     CurseOnly = 'CurseOnly',
@@ -26,8 +29,8 @@ export enum MagicType {
 }
 
 export type MagicTypeWithDirection = {
-    type: MagicType | null;
-    direction: MagicDirection | null;
+    type: MagicType
+    direction: MagicDirection
 };
 
 export class CharDefence {
@@ -109,9 +112,9 @@ export class CharInfo {
     icon: typeof logo | null;
     persona: typeof logo | null;
     charType: CharType;
-    magicType: MagicType | null
+    magicType: MagicTypeWithDirection | null
     constructor(name: string, description: string, icon: typeof logo | null, persona: typeof logo | null,
-                charType: CharType, magicType: MagicType | null, playerType: PlayerType, cell: Cell | null) {
+                charType: CharType, magicType: MagicTypeWithDirection | null, playerType: PlayerType, cell: Cell | null) {
         this.name = name;
         this.playerType = playerType;
         this.cell = cell;
@@ -166,12 +169,13 @@ export class Character {
     modified: CharStats;
     info: CharInfo;
     inventory: CharInventory;
-    effects: Effect[]; // Здесь будут эффекты. Пока просто массивом.
-    army: string; // Здесь будет армия позже. Пока просто стринг
+    effects: Effect[];
+    army: Army | null;
+    charPos: CharPos;
     modify: ModifyCharStats;
-    bonus: []; // Здесь будут бонусы. Пока просто массивом.
+    bonus: Bonuses;
 
-    constructor(stats: CharStats, info: CharInfo, inventory: CharInventory, army: string, bonus: [], effects: Effect[]) {
+    constructor(stats: CharStats, info: CharInfo, inventory: CharInventory, army: Army, bonus: Bonuses, effects: Effect[], charPos: CharPos) {
         this.stats = stats;
         this.modified = stats;
         this.info = info;
@@ -180,7 +184,7 @@ export class Character {
         this.army = army;
         this.modify = new ModifyCharStats();
         this.bonus = bonus;
-
+        this.charPos = charPos;
         this.recalc();
     }
 
@@ -245,7 +249,7 @@ export class Character {
             damage.magic *= 2;
         }
 
-        target.addEffect(new AttackMagic(target.correctDamage(damage, this.info.magicType).magic))
+        target.addEffect(new AttackMagic(target.correctDamage(damage, this.info.magicType.type).magic))
         return true;
     }
 
@@ -258,7 +262,7 @@ export class Character {
             return false
         }
 
-        target.addEffect(new DisableMagic(target.correctDamage(damage, this.info.magicType).magic))
+        target.addEffect(new DisableMagic(target.correctDamage(damage, this.info.magicType.type).magic))
         return true;
     }
 
@@ -277,15 +281,144 @@ export class Character {
     }
 
     elementalAttack() {
-
+        //TODO: require beingAttacked func
     }
 
     getMagicDirection() {
 
     }
 
-    canAttackChar() {
+    canAttack(target: Character): boolean {
+        const effected = this.modified;
+        const isEnemy = this.army !== target.army;
+        const charField = fieldType(this.charPos.getIndex());
+        const targetField = fieldType(target.charPos.getIndex());
+        const damage = effected.damage;
 
+        if (charField === CellType.TENT || targetField === CellType.TENT) {
+            return false;
+        }
+
+        if (damage.melee > 0
+            && this.charPos.y === target.charPos.y
+            && Math.abs(target.charPos.x - this.charPos.x) < 2
+            && isEnemy) {
+            return true
+        }
+
+        if (damage.range > 0
+            && charField === CellType.RANGE
+            && isEnemy) {
+            return true
+        }
+
+        if (!this.info.magicType) {
+            return false;
+        }
+
+        const magicType = this.info.magicType.type
+        const direction = this.info.magicType.direction;
+
+        switch (direction) {
+            case MagicDirection.ToAlly:
+                switch (magicType) {
+                    case MagicType.Death:
+                        if (target.info.charType === CharType.People) {
+                            return false;
+                        }
+                        break;
+                    case MagicType.Life:
+                        if (target.info.charType === CharType.Undead) {
+                        return false;
+                    }
+                        break;
+                    case MagicType.Elemental:
+                        return !target.hasEffectKind(EffectKind.MageSupport);
+                }
+                break;
+
+            case MagicDirection.ToAll:
+                switch (magicType) {
+                    case MagicType.Death:
+                    case MagicType.Life:
+                        if (isEnemy && charField === CellType.RANGE) {
+                            return true
+                        }
+                        switch (target.info.charType) {
+                            case CharType.People:
+                                if (magicType === MagicType.Death) {
+                                    return false;
+                                }
+                                break;
+                            case CharType.Undead:
+                                if (magicType === MagicType.Life) {
+                                    return false
+                                }
+                                break;
+                        }
+                        break;
+                    case MagicType.Elemental:
+                        return isEnemy
+                            ? charField === CellType.RANGE
+                            : !target.hasEffectKind(EffectKind.MageSupport);
+                }
+                break;
+
+            case MagicDirection.ToEnemy:
+            case MagicDirection.CurseOnly:
+            case MagicDirection.StrikeOnly:
+                switch (magicType) {
+                    case MagicType.Death:
+                    case MagicType.Elemental:
+                    case MagicType.Life:
+                        return isEnemy ? charField === CellType.RANGE : false;
+                }
+                break;
+
+            case MagicDirection.BlessOnly:
+                if (isEnemy) {
+                    return false;
+                }
+                switch (magicType) {
+                    case MagicType.Death:
+                    case MagicType.Life:
+                        switch (target.info.charType) {
+                            case CharType.People:
+                                if (magicType === MagicType.Death) {
+                                    return false
+                                }
+                                break;
+                            case CharType.Undead:
+                                if (magicType === MagicType.Life) {
+                                    return false;
+                                }
+                                break;
+                        }
+                        break;
+                    case MagicType.Elemental:
+                        return !target.hasEffectKind(EffectKind.MageSupport);
+                }
+                break;
+
+            case MagicDirection.CureOnly:
+                if (isEnemy || magicType === MagicType.Elemental) {
+                    return false
+                }
+                switch (target.info.charType) {
+                    case CharType.People:
+                        if (magicType === MagicType.Death) {
+                            return false;
+                        }
+                        break;
+                    case CharType.Undead:
+                        if (magicType === MagicType.Life) {
+                            return false;
+                        }
+                        break;
+                }
+                break;
+        }
+        return false;
     }
 
     attack() {
@@ -337,8 +470,9 @@ export class Character {
 
     }
 
-    getBonus() {
-
+    getBonus(): Bonuses {
+        // TODO: Items bonuses.
+        return this.bonus;
     }
 
     getBonusInfo() {
@@ -346,7 +480,11 @@ export class Character {
     }
 
     underAttack(sender: Character, damage: CharPower) {
-
+        if (sender.info.magicType) {
+            const correctedDamage = this.correctDamage(damage, sender.info.magicType.type)
+        }
+        const senderBonus = sender.getBonus();
+        const damageAfterBonuses = Bonus.onAttack(senderBonus, damage, this, sender)
     }
 
     correctDamage(damage: CharPower, magicType: MagicType): CharPower {
@@ -372,21 +510,6 @@ export class Character {
             range: calcPerc(adjustedRange, adjustDefence(rangePercent)),
             melee: calcPerc(adjustedMelee, adjustDefence(meleePercent))
         };
-
-        // const adjustedMagicDef = Math.max(basicPercentage - magicDef, 0);
-        // const adjustedMagic = Math.max(damage.magic - magicUnits, 0);
-        //
-        // const adjustedRangeDef = Math.max(basicPercentage - rangePercent, 0);
-        // const adjustedRange = Math.max(damage.range - rangeUnits, 0);
-        //
-        // const adjustedMeleeDef = Math.max(basicPercentage - meleePercent, 0);
-        // const adjustedMelee = Math.max(damage.melee - meleeUnits, 0);
-        //
-        // return {
-        //     magic: calcPerc(adjustedMagic, adjustedMagicDef),
-        //     range: calcPerc(adjustedRange, adjustedRangeDef),
-        //     melee: calcPerc(adjustedMelee, adjustedMeleeDef)
-        // }
     }
 
     tick() {
