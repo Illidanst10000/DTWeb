@@ -333,4 +333,31 @@ export class ToEndEffect implements Effect, EffectInfo {
     }
 }
 
+export class ArtilleryEffect implements Effect {
+    lifetime: number;
+    constructor() {
+        this.lifetime = 0;
+    }
+
+    updateStats(char: Character): void {
+        char.modify.speed.updateValues(new Modify().add(30))
+    }
+    finish(char: Character): void {
+        char.modify.speed.updateValues(new Modify().add(-30))
+    }
+    onTick(): boolean {
+        this.lifetime -= 1;
+        return true;
+    }
+    isFinished(): boolean {
+        return !this.lifetime;
+    }
+    setLifetime(lifetime: number): ArtilleryEffect {
+        this.lifetime = lifetime;
+        return this;
+    }
+
+
+}
+
 

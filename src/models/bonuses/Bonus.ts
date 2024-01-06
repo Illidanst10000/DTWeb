@@ -1,7 +1,7 @@
-import {Character, CharPower} from "../characters/Character";
+import {Character, CharPower, CharType} from "../characters/Character";
 import {calcPerc} from "../../utils";
-import {MoreMoves, ToEndEffect} from "../effects/Effect";
-import {Modify, ModifyCharStats, ModifyPower} from "../characters/CharactersStats";
+import {ArtilleryEffect, EffectKind, MoreMoves, Poison, ToEndEffect} from "../effects/Effect";
+import {Modify, ModifyCharStats} from "../characters/CharactersStats";
 
 export enum Bonuses {
     DefencePiercing,
@@ -23,12 +23,11 @@ export enum Bonuses {
     DeathCurse,
     Artillery, // Start and attack bonus: the character always gets the very first move in a battle,
     Counterblow,
-    Stealth,
     SpearDefence, // Start bonus: on the first turn in a battle, the character gets tripled protection
     FlankStrike,
 }
 export class Bonus {
-    static onAttack(bonus: Bonuses, damage: CharPower, receiver: Character, sender: Character): CharPower {
+    static onAttacked(bonus: Bonuses, damage: CharPower, receiver: Character, sender: Character): CharPower {
         switch (bonus) {
             case (Bonuses.AncientVampiresGist | Bonuses.VampiresGist | Bonuses.DeadDodging | Bonuses.Dodging):
                 const dodgeRate = 70;
@@ -78,6 +77,32 @@ export class Bonus {
         }
     }
 
+    static onAttacking(bonus: Bonuses, damage: CharPower, receiver: Character, sender: Character): CharPower {
+        switch (bonus) {
+            case Bonuses.DefencePiercing | Bonuses.VampiresGist | Bonuses.AncientVampiresGist | Bonuses.Dodging:
+               return this.pierce(sender)
+            case Bonuses.PoisonAttack:
+                if (!receiver.hasEffectKind(EffectKind.Poison) && receiver.info.charType !== CharType.Undead) {
+                    if (damage.range > 1 || damage.melee > 1) {
+                        receiver.addEffect(new Poison());
+                    }
+                }
+                return damage;
+            case Bonuses.GodAnger:
+                damage.melee += 10;
+                return damage;
+            case Bonuses.GodStrike:
+                damage.melee += 20;
+                return damage;
+            case Bonuses.FlankStrike:
+                if (damage.melee > 0 && Math.abs(receiver.charPos.x - sender.charPos.x) > 1) {
+                    damage.melee += Math.max(0, sender.modified.damage.melee - receiver.modified.defence.meleeUnits / 2)
+                }
+                return damage;
+            default: return CharPower.empty();
+        }
+    }
+
     static onKill(bonus: Bonuses, damage: CharPower, receiver: Character, sender: Character): boolean {
         if (bonus === Bonuses.Berserk) {
             const percentRate = 10;
@@ -98,6 +123,21 @@ export class Bonus {
             char.addEffect(new MoreMoves())
             return true
         }
+        if (bonus === Bonuses.Artillery) {
+            char.addEffect(new ArtilleryEffect().setLifetime(1))
+            return true
+        }
         return false
+    }
+
+    static pierce(sender: Character): CharPower {
+        const { magic, range, melee } = sender.modified.damage;
+        if (magic > range && magic > melee) {
+            return { magic: magic, range: 0, melee: 0 };
+        } else if (melee > range && melee > magic) {
+            return { magic: 0, range: 0, melee: melee };
+        } else {
+            return { magic: 0, range: range, melee: 0 };
+        }
     }
 }
