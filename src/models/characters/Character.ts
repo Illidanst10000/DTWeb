@@ -1,10 +1,10 @@
-import {PlayerType} from "../PlayerType";
+
 import logo from '../../assets/melee.jpg'
 import {Cell, CellType, fieldType} from "../Cell";
 import {ModifyCharStats} from "./CharactersStats";
 import {AttackMagic, DisableMagic, Effect, EffectKind, ElementalSupport, HealMagic} from "../effects/Effect";
 import {calcPerc} from "../../utils";
-import {Army} from "../armies/Army";
+import {Army} from "../Army";
 import {Bonus, Bonuses} from "../bonuses/Bonus";
 
 export enum MagicDirection {
@@ -15,6 +15,7 @@ export enum MagicDirection {
     StrikeOnly = 'StrikeOnly',
     BlessOnly = 'BlessOnly',
     CureOnly = 'CureOnly',
+    Basic = 'Basic',
 }
 
 export enum CharType {
@@ -26,6 +27,7 @@ export enum MagicType {
     Life = 'Life',
     Death = 'Death',
     Elemental = 'Elemental',
+    Basic = 'Basic'
 }
 
 export type MagicTypeWithDirection = {
@@ -105,8 +107,6 @@ export class CharStats {
 
 export class CharInfo {
     name: string;
-    playerType: PlayerType;
-    cell: Cell | null;
     id: number;
     description: string;
     icon: typeof logo | null;
@@ -114,10 +114,8 @@ export class CharInfo {
     charType: CharType;
     magicType: MagicTypeWithDirection
     constructor(name: string, description: string, icon: typeof logo | null, persona: typeof logo | null,
-                charType: CharType, magicType: MagicTypeWithDirection, playerType: PlayerType, cell: Cell | null) {
+                charType: CharType, magicType: MagicTypeWithDirection) {
         this.name = name;
-        this.playerType = playerType;
-        this.cell = cell;
         this.id = Math.random();
         this.description = description;
         this.icon = icon;
@@ -127,7 +125,7 @@ export class CharInfo {
     }
 
     static empty() {
-        return new CharInfo('', '', null, null, CharType.People, {type: MagicType.Life, direction: MagicDirection.ToAlly}, PlayerType.FIRST, null);
+        return new CharInfo('', '', null, null, CharType.People, {type: MagicType.Basic, direction: MagicDirection.Basic});
     }
 }
 
@@ -607,11 +605,11 @@ export class Character {
     }
 
     addItem() {
-
+        // TODO: Items
     }
 
     removeItem() {
-
+        // TODO: Items
     }
 
     getBonus(): Bonuses {
@@ -666,8 +664,20 @@ export class Character {
         };
     }
 
-    tick() {
+    tick(): void {
+        for (let i = 0; i < this.effects.length; i++) {
+            let effect = this.effects.splice(i, 1)[0];
+            if (typeof effect.onTick === "function") {
+                effect.onTick();
+            }
 
+            if (effect.isFinished()) {
+                effect.finish(this);
+                i--;
+            } else {
+                this.effects.push(effect);
+            }
+        }
     }
 }
 

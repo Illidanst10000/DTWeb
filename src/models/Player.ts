@@ -1,5 +1,8 @@
-import {PlayerType} from "./PlayerType";
 
+export enum PlayerType {
+    FIRST = "top",
+    SECOND = "bottom"
+}
 export class Player {
     playerType: PlayerType;
 

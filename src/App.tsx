@@ -9,21 +9,21 @@ import {Cell} from "./models/Cell";
 
 
 const App = () => {
-    const [board, setBoard] = useState(new Board())
-    const [currentCharacter, setCurrentCharacter] = useState<Character | null>(null)
-    const [hoveredCell, setHoveredCell] = useState<Cell | null>(null)
-    const [winner, setWinner] = useState<PlayerType | null> (null)
-
-    useEffect(() => {
-        restart()
-    }, [])
-
-    function restart() {
-        const newBoard = new Board();
-        newBoard.initCells()
-        setCurrentCharacter(newBoard.addCharacters())
-        setBoard(newBoard)
-    }
+    // const [board, setBoard] = useState(new Board())
+    // const [currentCharacter, setCurrentCharacter] = useState<Character | null>(null)
+    // const [hoveredCell, setHoveredCell] = useState<Cell | null>(null)
+    // const [winner, setWinner] = useState<PlayerType | null> (null)
+    //
+    // useEffect(() => {
+    //     restart()
+    // }, [])
+    //
+    // function restart() {
+    //     const newBoard = new Board();
+    //     newBoard.initCells()
+    //     setCurrentCharacter(newBoard.addCharacters())
+    //     setBoard(newBoard)
+    // }
 
     return (
 
@@ -40,6 +40,8 @@ const App = () => {
                     Победил игрок {winner}! Поздравляем
                 </div>
             )}
+
+
         </div>
     );
 };

@@ -16,7 +16,7 @@ export interface Effect {
     onTick?(): boolean;
     onBattleEnd?(): boolean;
     tick?(char: Character): boolean;
-    finish?(char: Character): void;
+    finish(char: Character): void;
     isFinished(): boolean;
     getKind?(): EffectKind;
 }
@@ -298,6 +298,9 @@ export class Poison implements Effect, EffectInfo {
     onBattleEnd(): boolean {
         this.lifetime = 0;
         return true;
+    }
+    finish(char: Character): void {
+        return;
     }
 }
 

@@ -25,6 +25,7 @@ export enum Bonuses {
     Counterblow,
     SpearDefence, // Start bonus: on the first turn in a battle, the character gets tripled protection
     FlankStrike,
+    Basic,
 }
 export class Bonus {
     static onAttacked(bonus: Bonuses, damage: CharPower, receiver: Character, sender: Character): CharPower {
@@ -70,8 +71,7 @@ export class Bonus {
                 }
                 return damage
             case (Bonuses.Counterblow):
-                sender.attack()
-                // TODO: require char.attack()
+                sender.attack(receiver)
                 return damage
             default: return CharPower.empty()
         }
