@@ -2,102 +2,96 @@ import React, {FC, useEffect, useState} from 'react';
 import CellComponent from "./CellComponent";
 import {Board} from "../models/Board";
 import {Cell} from "../models/Cell";
-import {Character} from "../models/characters/Character";
-import AttackTurnService from "../services/AttackTurnService";
 import CharacterStatsComponent from "./CharacterStatsComponent";
 import underCellLogo from "./../assets/undercell.png"
-import {PlayerType} from "../models/PlayerType";
+import {Army} from "../models/Army";
 
 interface BoardProps {
     board: Board;
     setBoard: (board: Board) => void;
-    currentCharacter: Character | null
-    setCurrentCharacter: (character: Character) => void
-    setWinner: (playerType: PlayerType) => void
+    currentCell: Cell | null
+    setCurrentCell: (character: Cell) => void
+    // setWinner: (playerType: PlayerType) => void
     setHoveredCell: (cell: Cell) => void
 
 }
 
-const BoardComponent: FC<BoardProps> = ({board, setBoard, currentCharacter,
-                                            setCurrentCharacter, setWinner, setHoveredCell}) => {
-
-    const [selectedCell, setSelectedCell] = useState<Cell | null>(null)
-
-
-    useEffect(() => {
-        setSelectedCell(currentCharacter?.cell ?? null)
-    }, [currentCharacter])
+const BoardComponent: FC<BoardProps> = (
+    {   board,
+        setBoard,
+        currentCell,
+        setCurrentCell,
+        setHoveredCell}) => {
 
     useEffect(() => {
+        // console.log('Selected cell state update: ', currentCell)
         highlightCells()
-    }, [selectedCell])
 
-    function click(cell: Cell) {
-
-        if (selectedCell && selectedCell.character) {
-
-            if (selectedCell.character.canMove(cell)) {
-                AttackTurnService.move(selectedCell, cell);
-                setSelectedCell(cell);
-
-            } else if (selectedCell === cell) {
-                AttackTurnService.skip(selectedCell);
-
-            } else if (selectedCell.character.canAttack(cell)) {
-                const updatedTargetHits = AttackTurnService.attack(selectedCell, cell);
-
-                if (updatedTargetHits === 0) {
-                    cell.removeCharacter();
-                    if (board.handleWinner()) {
-                        board.handleWinner() === PlayerType.FIRST
-                            ? setWinner(PlayerType.FIRST)
-                            : setWinner(PlayerType.SECOND)
-                    }
-                    highlightCells();
-                }
-            }
-            switchTurn()
-            updateBoard();
-        }
-    }
-
-    function handleCellHover(cell: Cell) {
-        setHoveredCell(cell);
-    }
-    function switchTurn() {
-        const nextChar = board.getNextChar();
-        setCurrentCharacter(nextChar);
-    }
-
-    function highlightCells() {
-        board.highlightCells(selectedCell)
-        updateBoard()
-    }
+    }, [currentCell]);
 
     function updateBoard() {
         const newBoard = board.getCopyBoard()
         setBoard(newBoard)
     }
 
+    function highlightCells() {
+        board.searchInteractions()
+        updateBoard()
+    }
+
+    function handleCellHover(cell: Cell) {
+        setHoveredCell(cell);
+    }
+
+    function switchTurn() {
+        const nextCell = board.searchNextActive();
+        setCurrentCell(nextCell);
+    }
+
+    function click(targetCell: Cell) {
+        if (!currentCell || !currentCell.character) return;
+
+        const army = currentCell.army;
+        if (army.canMove(currentCell, targetCell)) {
+            army.move(currentCell, targetCell);
+        }
+
+        if (targetCell === currentCell) {
+            currentCell.character.modified.moves -= 1;
+            currentCell.character.modified.initiative = 0;
+        }
+
+        switchTurn();
+        updateBoard();
+    }
+
+    function renderArmy(army: Army) {
+        return army.cells.map((row, index) => (
+            <React.Fragment key={index}>
+                {row.map((cell, index) => (
+                    <div className="cell-component" key={index}>
+                        {currentCell ? <CellComponent
+                            click={click}
+                            cell={cell}
+                            currentCell={currentCell}
+                            onCellHover={handleCellHover}
+                        /> : <div/>}
+
+                        {cell.character
+                            ? <CharacterStatsComponent character={cell.character}/>
+                            : <img className="under-cell" src={underCellLogo} alt={"undercell"}/>}
+                    </div>
+                ))}
+            </React.Fragment>
+        ));
+    }
+
+
     return (
         <div className="board">
-            {board.cells.map((row, index) =>
-                <React.Fragment key={index}>
-                    {row.map(cell =>
-                        <div className="cell-component">
-                            <CellComponent
-                                click={click}
-                                cell={cell}
-                                selected={cell.x === selectedCell?.x && cell.y === selectedCell?.y}
-                                onCellHover={handleCellHover}
-                            />
-                            {cell.character
-                                ? <CharacterStatsComponent char={cell.character}/>
-                                : <img className="under-cell" src={underCellLogo}/>}
-                        </div>
-                    )}
-                </React.Fragment>
-            )}
+            <div className="army">{renderArmy(board.firstArmy)}</div>
+            <div className="separator"></div>
+            <div className="army">{renderArmy(board.secondArmy)}</div>
         </div>
     );
 };

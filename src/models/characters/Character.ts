@@ -1,11 +1,12 @@
+import {CellType, MELEE, RANGE, TENT} from "../CellType";
 
 import logo from '../../assets/melee.jpg'
-import {Cell, CellType, fieldType} from "../Cell";
 import {ModifyCharStats} from "./CharactersStats";
 import {AttackMagic, DisableMagic, Effect, EffectKind, ElementalSupport, HealMagic} from "../effects/Effect";
 import {calcPerc} from "../../utils";
-import {Army} from "../Army";
+import {Army, armyStructure} from "../Army";
 import {Bonus, Bonuses} from "../bonuses/Bonus";
+import {Cell} from "../Cell";
 
 export enum MagicDirection {
     ToAlly = 'ToAlly',
@@ -130,12 +131,20 @@ export class CharInfo {
 }
 
 export class CharPos {
+    cell: Cell | null
     x: number;
     y: number;
 
-    constructor(x: number, y: number) {
-        this.x = x;
-        this.y = y;
+    constructor() {
+        this.cell = null;
+        this.x = 0;
+        this.y = 0;
+    }
+
+    setCell(cell: Cell) {
+        this.cell = cell
+        this.x = cell.x
+        this.y = cell.y
     }
 
     getCoordinates() {
@@ -145,8 +154,9 @@ export class CharPos {
     getIndex() {
         return this.x + this.y * Math.floor(12 / 2);
     }
+
     static empty() {
-        return new CharPos(0, 0);
+        return new CharPos();
     }
 
 }
@@ -168,22 +178,30 @@ export class Character {
     info: CharInfo;
     inventory: CharInventory;
     effects: Effect[];
-    army: Army | null;
     charPos: CharPos;
     modify: ModifyCharStats;
     bonus: Bonuses;
 
-    constructor(stats: CharStats, info: CharInfo, inventory: CharInventory, army: Army, bonus: Bonuses, effects: Effect[], charPos: CharPos) {
+    constructor(stats: CharStats, info: CharInfo, inventory: CharInventory, bonus: Bonuses, effects: Effect[], charPos: CharPos) {
         this.stats = stats;
         this.modified = stats;
         this.info = info;
         this.inventory = inventory;
         this.effects = effects;
-        this.army = army;
         this.modify = new ModifyCharStats();
         this.bonus = bonus;
         this.charPos = charPos;
         this.recalc();
+    }
+
+    fieldType(index: number): CellType {
+        if (index === 0 || index === armyStructure.maxChars / 2 - 1) {
+            return TENT
+        }
+        if (index < armyStructure.maxChars / 2) {
+            return RANGE
+        }
+        return MELEE
     }
 
     recalc() {
@@ -292,12 +310,12 @@ export class Character {
     canAttack(target: Character): boolean {
         // TODO: flank attack check
         const effected = this.modified;
-        const isEnemy = this.army !== target.army;
-        const charField = fieldType(this.charPos.getIndex());
-        const targetField = fieldType(target.charPos.getIndex());
+        const isEnemy = this.charPos.cell?.getArmy() !== target.charPos.cell?.getArmy()
+        const charField = this.fieldType(this.charPos.getIndex());
+        const targetField = this.fieldType(target.charPos.getIndex());
         const damage = effected.damage;
 
-        if (charField === CellType.TENT || targetField === CellType.TENT) {
+        if (charField === TENT || targetField === TENT) {
             return false;
         }
 
@@ -309,7 +327,7 @@ export class Character {
         }
 
         if (damage.range > 0
-            && charField === CellType.RANGE
+            && charField === RANGE
             && isEnemy) {
             return true
         }
@@ -343,7 +361,7 @@ export class Character {
                 switch (magicType) {
                     case MagicType.Death:
                     case MagicType.Life:
-                        if (isEnemy && charField === CellType.RANGE) {
+                        if (isEnemy && charField === RANGE) {
                             return true
                         }
                         switch (target.info.charType) {
@@ -361,7 +379,7 @@ export class Character {
                         break;
                     case MagicType.Elemental:
                         return isEnemy
-                            ? charField === CellType.RANGE
+                            ? charField === RANGE
                             : !target.hasEffectKind(EffectKind.MageSupport);
                 }
                 break;
@@ -373,7 +391,7 @@ export class Character {
                     case MagicType.Death:
                     case MagicType.Elemental:
                     case MagicType.Life:
-                        return isEnemy ? charField === CellType.RANGE : false;
+                        return isEnemy ? charField === RANGE : false;
                 }
                 break;
 
@@ -425,18 +443,18 @@ export class Character {
 
     attack(target: Character): boolean {
         const effected = this.modified;
-        const isEnemy = this.army !== target.army;
-        const charField = fieldType(this.charPos.getIndex());
-        const targetField = fieldType(target.charPos.getIndex());
+        const isEnemy = this.charPos.cell?.getArmy() !== target.charPos.cell?.getArmy()
+        const charField = this.fieldType(this.charPos.getIndex());
+        const targetField = this.fieldType(target.charPos.getIndex());
         const damage = effected.damage;
 
-        if (charField === CellType.TENT || targetField === CellType.TENT) {
+        if (charField === TENT || targetField === TENT) {
             return false;
         }
 
         if (damage.range > 0
             && ((this.charPos.y === target.charPos.y && Math.abs(this.charPos.x - target.charPos.x) < 2)
-                || charField === CellType.RANGE)
+                || charField === RANGE)
             && isEnemy) {
                 damage.melee = 0;
                 damage.magic = 0;
@@ -447,7 +465,7 @@ export class Character {
         if (damage.melee > 0
             && this.charPos.y === target.charPos.y
             && Math.abs(target.charPos.x - this.charPos.x) < 2
-            && charField === CellType.MELEE
+            && charField === MELEE
             && isEnemy) {
                 damage.range = 0;
                 damage.magic = 0;
@@ -478,7 +496,7 @@ export class Character {
                     case MagicType.Death:
                     case MagicType.Life:
                         if (isEnemy) {
-                            if (charField !== CellType.RANGE) {
+                            if (charField !== RANGE) {
                                 return false;
                             }
                             return this.magicAttack(target, damage, magicType);
@@ -488,7 +506,7 @@ export class Character {
 
                     case MagicType.Elemental:
                         if (isEnemy) {
-                            if (charField !== CellType.RANGE) {
+                            if (charField !== RANGE) {
                                 return false;
                             }
                             return this.elementalAttack(target, damage)
@@ -499,7 +517,7 @@ export class Character {
                 break;
 
             case MagicDirection.ToEnemy:
-                if (charField !== CellType.RANGE && !isEnemy) {
+                if (charField !== RANGE && !isEnemy) {
                     return false
                 }
                 switch (magicType) {
@@ -679,29 +697,11 @@ export class Character {
             }
         }
     }
+
 }
 
 
 
-//
-//     canMove(target: Cell): boolean {
-//         if (target.playerType !== this.cell.playerType) {
-//             return false
-//         }
-//         if (target.character?.playerType === this.playerType) {
-//             return false
-//         }
-//         if (this.cell.isEmptyVertical(target)) {
-//             return true
-//         }
-//         if (this.cell.isEmptyHorizontal(target)) {
-//             return true
-//         }
-//         if (this.cell.isEmptyTent(target)) {
-//             return true
-//         }
-//         return false;
-//     }
 //
 //     canAttack(target: Cell): boolean {
 //         if (target.playerType !== this.playerType && target.character) {

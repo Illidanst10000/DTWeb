@@ -1,23 +1,6 @@
-
+import {CellType} from "./CellType";
 import {Character} from "./characters/Character";
-import AttackTurnService from "../services/AttackTurnService";
-import {Army, armyStructure} from "./Army";
-
-export enum CellType {
-    TENT = "tent",
-    RANGE = "range",
-    MELEE = "melee"
-}
-
-export function fieldType(index: number): CellType {
-    if (index === 0 || index === armyStructure.maxChars / 2 - 1) {
-        return CellType.TENT
-    }
-    if (index < armyStructure.maxChars / 2) {
-        return CellType.RANGE
-    }
-    return CellType.MELEE
-}
+import {Army} from "./Army";
 
 export class Cell {
 
@@ -29,11 +12,13 @@ export class Cell {
     available: boolean;
     id: number
 
-
     constructor(x: number, y: number, character: Character | null, cellType: CellType, army: Army) {
         this.x = x;
         this.y = y;
         this.character = character;
+        if (character) {
+            character.charPos.setCell(this)
+        }
         this.cellType = cellType;
         this.army = army;
         this.available = false;
@@ -46,8 +31,7 @@ export class Cell {
 
     setCharacter(character: Character) {
         this.character = character;
-        this.character.charPos.y = this.y;
-        this.character.charPos.x = this.x;
+        this.character.charPos.setCell(this)
     }
 
     removeCharacter() {
@@ -61,11 +45,13 @@ export class Cell {
     getCellPos(): number[] {
         return [this.x, this.y]
     }
+
     isEnemyCellType(target: Cell): boolean {
-        if (target.cellType !== this.cellType) {
-            return true
-        }
-        return false
+        return target.cellType !== this.cellType;
+    }
+
+    getArmy(): Army {
+        return this.army
     }
 
 

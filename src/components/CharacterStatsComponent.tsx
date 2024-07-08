@@ -1,33 +1,32 @@
 import React, {FC} from 'react';
-import {Cell} from "../models/Cell";
 import {Character} from "../models/characters/Character";
 
 interface CharStatsProps {
-    char: Character;
+    character: Character;
 }
-const CharacterStatsComponent: FC<CharStatsProps> = ({char}) => {
+const CharacterStatsComponent: FC<CharStatsProps> = ({character}) => {
     return (
         <div className="character-stats">
             <div className="char-text-sides">
                 <span>
-                    {'A: ' + char.attack}
+                    {'A: ' + character.modified.damage.melee}
                 </span>
                 <span>
-                    {'D: ' + char.defenceBlow + '/' + char.defenceShot}
+                    {'D: ' + character.modified.defence.meleeUnits  + '/' + character.modified.defence.rangeUnits}
                 </span>
             </div>
             <div className="char-text-sides">
                 <span>
-                    {'Mnvr: ' + char.currentActions}
+                    {'Mnvr: ' + character.modified.moves}
                 </span>
                 <span>
-                    {'Ini: ' + char.currentInitiative}
+                    {'Ini: ' + character.modified.initiative}
                 </span>
             </div>
             <div className="char-text-center">
                 {" Hits: "}
-                {char.hits !== char.currentHits ? char.currentHits + '/' : ''}
-                { char.hits}
+                {character.modified.maxHp !== character.modified.hp ? character.modified.hp + '/' : ''}
+                { character.modified.maxHp }
             </div>
         </div>
     );
