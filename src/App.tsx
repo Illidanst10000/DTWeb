@@ -7,6 +7,7 @@ import {Cell} from "./models/Cell";
 import {PlayerType} from "./models/Player";
 import {createCharacter} from "./models/characters/CharacterCreation";
 import {CharactersList} from "./models/characters/CharactersData";
+import {Modify} from "./models/characters/CharactersStats";
 
 const App = () => {
     const [board, setBoard] = useState<Board | null>(null)
@@ -23,8 +24,8 @@ const App = () => {
             { coordinate: { x: 1, y: 1 }, character: createCharacter(CharactersList.KNIGHT) },
         ];
         const assignmentsBottom = [
-            { coordinate: { x: 1, y: 0 }, character: createCharacter(CharactersList.HERO_ARCHMAGE) },
-            { coordinate: { x: 3, y: 0 }, character: createCharacter(CharactersList.KNIGHT) },
+            { coordinate: { x: 1, y: 1 }, character: createCharacter(CharactersList.HERO_ARCHMAGE) },
+            { coordinate: { x: 2, y: 0 }, character: createCharacter(CharactersList.KNIGHT) },
         ];
         const firstArmy = new Army(PlayerType.FIRST)
         const secondArmy = new Army(PlayerType.SECOND)
@@ -40,9 +41,9 @@ const App = () => {
         setBoard(newBoard);
     }, []);
 
-    useEffect(() => {
-        console.log('Board activeCell: ', board?.activeCell)
-    }, [board]);
+    // useEffect(() => {
+    //     console.log('Board activeCell: ', board?.activeCell)
+    // }, [board]);
 
 
     // useEffect(() => {
@@ -65,13 +66,15 @@ const App = () => {
     };
 
     const addCharToTop = () => {
-        const coords = { x: coordinates.x, y: coordinates.y };
-
-        const assignments = [
-            { coordinate: coords, character: createCharacter(CharactersList.KNIGHT) },
-        ];
-        topArmy.assignCharacters(assignments);
-        updateBoard()
+        currentCell?.character?.modify.moves.updateValues(new Modify().add(1))
+        currentCell?.character?.reCalc()
+        // const coords = { x: coordinates.x, y: coordinates.y };
+        //
+        // const assignments = [
+        //     { coordinate: coords, character: createCharacter(CharactersList.KNIGHT) },
+        // ];
+        // topArmy.assignCharacters(assignments);
+        // updateBoard()
     };
 
     const addCharToBottom = () => {

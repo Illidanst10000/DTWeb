@@ -32,6 +32,7 @@ export class Cell {
     setCharacter(character: Character) {
         this.character = character;
         this.character.charPos.setCell(this)
+        // console.log('setCharacter: ', this)
     }
 
     removeCharacter() {

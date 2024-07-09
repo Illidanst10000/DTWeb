@@ -47,6 +47,7 @@ export function createCharacter(index: number) {
         data.Stats.Moves,
         data.Stats.Moves,
         data.Stats.Initiative,
+        data.Stats.Initiative,
         data.Stats.Vampiring,
         data.Stats.Regeneration
     )
@@ -59,6 +60,5 @@ export function createCharacter(index: number) {
         [],
         CharPos.empty()
     )
-
     return char;
 }

@@ -8,6 +8,7 @@ export class Modify {
     addV: number | null;
     percentAddV: number | null;
     percentSetV: number | null;
+
     constructor() {
         this.setV = null;
         this.addV = null;
@@ -16,16 +17,20 @@ export class Modify {
     }
 
     apply(v: number): number {
-        let value = v + (this.addV || 0);
-        if (this.percentAddV) {
+        let value = v;
+        if (this.addV !== null) {
+            value += this.addV
+        }
+        if (this.percentAddV !== null) {
             value += calcPerc(value, this.percentAddV)
         }
-        if (this.percentSetV) {
+        if (this.percentSetV !== null) {
             value = calcPerc(value, this.percentSetV)
         }
-        if (this.setV && this.setV !== 0) {
+        if (this.setV !== null) {
             value = this.setV;
         }
+
         return value;
     }
 
@@ -50,29 +55,10 @@ export class Modify {
     }
 
     updateValues(otherModify: Modify): void {
-
-        if (otherModify.addV !== null) {
-            this.addV = this.addV
-                ? this.addV + otherModify.addV
-                : otherModify.addV;
-        }
-        if (otherModify.setV !== null) {
-            this.setV = this.setV
-                ? this.setV + otherModify.setV
-                : otherModify.setV;
-        }
-
-        if (otherModify.percentAddV !== null) {
-            this.percentAddV = this.percentAddV
-                ? this.percentAddV + otherModify.percentAddV
-                : otherModify.percentAddV;
-        }
-
-        if (otherModify.percentSetV !== null) {
-            this.percentSetV = this.percentSetV
-                ? this.percentSetV + otherModify.percentSetV
-                : otherModify.percentSetV;
-        }
+        this.addV = (this.addV ?? 0) + (otherModify.addV ?? 0);
+        this.setV = (this.setV ?? 0) + (otherModify.setV ?? 0);
+        this.percentAddV = (this.percentAddV ?? 0) + (otherModify.percentAddV ?? 0);
+        this.percentSetV = (this.percentSetV ?? 0) + (otherModify.percentSetV ?? 0);
     }
 }
 
@@ -154,9 +140,10 @@ export class ModifyCharStats {
     defence: ModifyDefence;
     moves: Modify;
     maxMoves: Modify;
-    speed: Modify;
-    vamp: Modify;
-    regen: Modify;
+    initiative: Modify;
+    maxInitiative: Modify;
+    vampiring: Modify;
+    regeneration: Modify;
     constructor() {
         this.hp = new Modify();
         this.maxHp = new Modify();
@@ -164,9 +151,10 @@ export class ModifyCharStats {
         this.defence = new ModifyDefence();
         this.moves = new Modify();
         this.maxMoves = new Modify();
-        this.speed = new Modify();
-        this.vamp = new Modify();
-        this.regen = new Modify();
+        this.initiative = new Modify();
+        this.maxInitiative = new Modify();
+        this.vampiring = new Modify();
+        this.regeneration = new Modify();
     }
 
     apply(stats: CharStats): CharStats {
@@ -177,9 +165,10 @@ export class ModifyCharStats {
         nStats.defence = this.defence.apply(stats.defence);
         nStats.moves = this.moves.apply(stats.moves);
         nStats.maxMoves = this.maxMoves.apply(stats.maxMoves);
-        nStats.initiative = this.speed.apply(stats.initiative);
-        nStats.vamp = this.vamp.apply(stats.vamp);
-        nStats.regen = this.regen.apply(stats.regen);
+        nStats.initiative = this.initiative.apply(stats.initiative);
+        nStats.maxInitiative = this.maxInitiative.apply(stats.maxInitiative);
+        nStats.vampiring = this.vampiring.apply(stats.vampiring);
+        nStats.regeneration = this.regeneration.apply(stats.regeneration);
         return nStats;
     }
 
@@ -190,8 +179,9 @@ export class ModifyCharStats {
         this.defence.updateValues(otherModifyCharStats.defence);
         this.moves.updateValues(otherModifyCharStats.moves);
         this.maxMoves.updateValues(otherModifyCharStats.maxMoves);
-        this.speed.updateValues(otherModifyCharStats.speed);
-        this.vamp.updateValues(otherModifyCharStats.vamp);
-        this.regen.updateValues(otherModifyCharStats.regen);
+        this.initiative.updateValues(otherModifyCharStats.initiative);
+        this.maxInitiative.updateValues(otherModifyCharStats.maxInitiative);
+        this.vampiring.updateValues(otherModifyCharStats.vampiring);
+        this.regeneration.updateValues(otherModifyCharStats.regeneration);
     }
 }

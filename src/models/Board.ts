@@ -13,6 +13,7 @@ import {
 import {Army} from "./Army";
 import {Bonus, Bonuses} from "./bonuses/Bonus";
 import {Cell} from "./Cell";
+import {Modify} from "./characters/CharactersStats";
 
 export const MaxRounds = 25;
 
@@ -32,7 +33,6 @@ export class Board {
         this.activeCell = activeCell
     }
 
-
     public start() {
         this.initializeArmy(this.firstArmy);
         this.initializeArmy(this.secondArmy);
@@ -47,7 +47,7 @@ export class Board {
                     let bonus = char?.getBonus();
                     Bonus.onBattleStart(bonus, char);
                     char.bonus = bonus;
-                    char.recalc();
+                    char.reCalc();
                 }
             })
         })
@@ -73,6 +73,7 @@ export class Board {
     }
 
     searchNextActive(): Cell {
+        // console.log('search next active| board.activeCell: ', this.activeCell)
         if (!this.firstArmy.cells.length || !this.secondArmy.cells.length) {
             throw new Error("Invalid army cells");
         }
@@ -80,13 +81,25 @@ export class Board {
         const firstArmyNext = this.findMaxInitiativeCell(this.firstArmy.cells).cell;
         const secondArmyNext = this.findMaxInitiativeCell(this.secondArmy.cells).cell;
 
-        if (this.isCellInactive(firstArmyNext) || this.getCellInitiative(secondArmyNext) > this.getCellInitiative(firstArmyNext)) {
-            this.activeCell = secondArmyNext;
-            return this.activeCell
+        const firstArmyInactive = this.isCellInactive(firstArmyNext)
+        const secondArmyInactive = this.isCellInactive(secondArmyNext)
+
+        const firstArmyInitiative = this.getCellInitiative(firstArmyNext)
+        const secondArmyInitiative = this.getCellInitiative(secondArmyNext)
+
+        if (firstArmyInactive && secondArmyInactive) {
+            this.activeCell = this.nextTurnRound();
+            return this.activeCell;
         }
 
-        this.activeCell = firstArmyNext;
-        return this.activeCell
+        if (firstArmyInitiative > secondArmyInitiative) {
+            // console.log('return first army')
+            this.activeCell = firstArmyNext;
+            return this.activeCell;
+        }
+        // console.log('return second army')
+        this.activeCell = secondArmyNext;
+        return this.activeCell;
     }
 
     private processArmyCells(army: Army, activeCell: Cell): void {
@@ -95,7 +108,9 @@ export class Board {
         });
     }
 
+    // check for possible actions to cells and highlight them
     searchInteractions(): void {
+        // console.log('search interactions | board.activeCell: ', this.activeCell)
         if (!this.activeCell || !this.activeCell.character) {
             console.log('Inactive cell or character', this.activeCell);
             return;
@@ -107,6 +122,7 @@ export class Board {
     }
 
     private checkAndMarkAvailability(activeCell: Cell, targetCell: Cell): void {
+        // console.log('active cell:', activeCell, 'targetCell: ', targetCell)
         const activeChar = activeCell.character!;
         targetCell.available = false
         // One army -> can move?
@@ -129,9 +145,7 @@ export class Board {
             for (let cell of cellRow) {
                 let char = cell.character;
                 if (char) {
-                    char?.tick();
-                    char.stats.moves = char.modified.maxMoves;
-                    char.recalc();
+                   char.restoreMove()
                 }
             }
         }
@@ -142,7 +156,8 @@ export class Board {
         this.restoreMoves(this.secondArmy.cells)
 
         this.roundsCount += 1;
-        this.checkWin();
+        return this.searchNextActive();
+        // this.checkWin();
     }
 
     checkWin(): void {
@@ -195,14 +210,4 @@ export class Board {
         return new Board(this.firstArmy, this.secondArmy, this.activeCell);
     }
 
-    public addCharacters() {
-        const damage = new CharPower(0, 0, 45)
-        const defence = new CharDefence(15, 15, 15, 0, 0, 0, 15, 10)
-        const magicTypeWithDirection: MagicTypeWithDirection = {type: MagicType.Basic, direction: MagicDirection.Basic};
-        const info = new CharInfo('Knight', 'desc', null, null, CharType.People, magicTypeWithDirection)
-        const stats = new CharStats(80, 80, damage, defence, 1, 1, 9, 0, 0)
-        const inventory = CharInventory.empty()
-        const charPos = CharPos.empty();
-        new Character(stats, info, inventory, Bonuses.Basic, [], charPos)
-    }
 }

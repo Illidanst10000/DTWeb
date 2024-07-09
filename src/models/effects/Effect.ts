@@ -343,10 +343,10 @@ export class ArtilleryEffect implements Effect {
     }
 
     updateStats(char: Character): void {
-        char.modify.speed.updateValues(new Modify().add(30))
+        char.modify.initiative.updateValues(new Modify().add(30))
     }
     finish(char: Character): void {
-        char.modify.speed.updateValues(new Modify().add(-30))
+        char.modify.initiative.updateValues(new Modify().add(-30))
     }
     onTick(): boolean {
         this.lifetime -= 1;

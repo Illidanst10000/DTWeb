@@ -67,7 +67,7 @@ export const characters: CharacterData = {
         Power: {
             Magic: 0,
             Range: 0,
-            Melee: 15
+            Melee: 25
         },
         Defence: {
             DeathMagic: 5,

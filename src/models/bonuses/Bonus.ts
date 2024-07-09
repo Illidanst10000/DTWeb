@@ -4,83 +4,106 @@ import {ArtilleryEffect, EffectKind, MoreMoves, Poison, ToEndEffect} from "../ef
 import {Modify, ModifyCharStats} from "../characters/CharactersStats";
 
 export enum Bonuses {
+    // -
     DefencePiercing,
-    Dodging, // Defence bonus: only 70% of the enemy's blows pass through the character's defence
-    Fast, // Start bonus: on the first turn in a battle the character receives +1 manoeuvre ????????? maybe
-    DeadDodging, // Defence bonus: the character is dead and therefore the arrows cause 70% less damage
+
+    // Defence bonus: only 70% of the enemy's blows pass through the character's defence
+    Dodging,
+
+    // Start bonus: on the first turn in a battle the character receives an additional move
+    Fast,
+
+    // Defence bonus: the character is dead and therefore the arrows cause 70% less damage
+    DeadDodging,
+
+    // -
     FastDead,
-    VampiresGist, // Attack and defence bonus: the Evil force allows the character to ignore enemy armour, and absorbs 30% of the enemy's impact
-    AncientVampiresGist, // Attack, defence and start bonus: the Evil force allows the character to
-// ignore enemy armour, and absorbs 30% of the enemy's impact, while on the first
-// turn of battle the character gains +1 manoeuvre
+
+    // Attack and defence bonus: the Evil force allows the character to ignore enemy armour, and absorbs 30% of the enemy's impact
+    VampiresGist,
+
+    // Attack, defence and start bonus: the Evil force allows the character to
+    // ignore enemy armour, and absorbs 30% of the enemy's impact, while on the first
+    // turn of battle the character gains +1 move
+    AncientVampiresGist,
+
+    // -
     Berserk,
+
+    // -
     Block,
+
+    // Apply poison effect with attack
     PoisonAttack,
-    Invulrenable, // Defence bonus: the character loses only 1 life hit from any hit
-    GodAnger, // Attack bonus: the character inflicts 10 damage on top of his attack anyway, ignoring any enemy defences
-    GodStrike, // Attack bonus: the character inflicts 20 damage on top of his attack anyway, ignoring any enemy defences
-    Ghost, // Defence bonus: the character is invulnerable to physical weapons, and if killed, his rage takes the life of his killer
+
+    // Defence bonus: the character loses only 1 life hit from any hit
+    Invulnerable,
+
+    // Attack bonus: the character inflicts 10 damage on top of his attack anyway, ignoring any enemy defences
+    GodAnger,
+
+    // Attack bonus: the character inflicts 20 damage on top of his attack anyway, ignoring any enemy defences
+    GodStrike,
+
+    // Defence bonus: the character is invulnerable to physical weapons, and if killed, his rage takes the life of his killer
+    Ghost,
+
+    // -
     DeathCurse,
-    Artillery, // Start and attack bonus: the character always gets the very first move in a battle,
+
+    // Start and attack bonus: the character always gets the very first move in a battle,
+    Artillery,
+
+    // Attacking back when getting attack
     Counterblow,
-    SpearDefence, // Start bonus: on the first turn in a battle, the character gets tripled protection
+
+    // Start bonus: on the first turn in a battle, the character gets tripled protection
+    SpearDefence,
+
+    // -
     FlankStrike,
+
     Basic,
 }
+
+const DODGE_RATE = 70;
+const DEATH_MAGIC_THRESHOLD = 30;
+
 export class Bonus {
     static onAttacked(bonus: Bonuses, damage: CharPower, receiver: Character, sender: Character): CharPower {
         switch (bonus) {
-            case (Bonuses.AncientVampiresGist | Bonuses.VampiresGist | Bonuses.DeadDodging | Bonuses.Dodging):
-                const dodgeRate = 70;
-                return {
-                    magic: calcPerc(damage.magic, dodgeRate),
-                    range: calcPerc(damage.range, dodgeRate),
-                    melee: calcPerc(damage.melee, dodgeRate),
-                }
-            case (Bonuses.Invulrenable):
-                return {
-                    magic: Math.min(damage.magic, 1),
-                    range: Math.min(damage.range, 1),
-                    melee: Math.min(damage.melee, 1),
-                }
-            case (Bonuses.Ghost):
-                let correctedGhostDamage = damage.magic
+            case Bonuses.AncientVampiresGist:
+            case Bonuses.VampiresGist:
+            case Bonuses.DeadDodging:
+            case Bonuses.Dodging:
+                return this.adjustDamage(damage, DODGE_RATE);
 
-                if (correctedGhostDamage === 0) {
-                    correctedGhostDamage = 1;
-                }
-                if (receiver.modified.hp - correctedGhostDamage < 1) {
-                    if ( sender.modified.defence.deathMagic <= 30 * (sender.modified.maxMoves)) {
-                        sender.kill();
-                    }
-                }
+            case Bonuses.Invulnerable:
+                return this.adjustDamage(damage, 1);
 
-                const {range, melee} = CharPower.empty()
-                return {
-                    magic: damage.magic,
-                    range: range,
-                    melee: melee,
-                }
-            case (Bonuses.DeathCurse):
-                let correctedCurseDamage = damage.magic + damage.range + damage.melee
-                if (correctedCurseDamage === 0) {
-                    correctedCurseDamage = 1;
-                }
-                if (receiver.modified.hp - correctedCurseDamage < 1) {
-                        sender.kill();
-                }
+            case Bonuses.Ghost:
+                return this.handleGhost(damage, receiver, sender);
+
+            case Bonuses.DeathCurse:
+                return this.handleDeathCurse(damage, receiver, sender);
+
+            case Bonuses.Counterblow:
+                sender.attack(receiver);
+                return damage;
+
+            default:
                 return damage
-            case (Bonuses.Counterblow):
-                sender.attack(receiver)
-                return damage
-            default: return CharPower.empty()
         }
     }
 
     static onAttacking(bonus: Bonuses, damage: CharPower, receiver: Character, sender: Character): CharPower {
         switch (bonus) {
-            case Bonuses.DefencePiercing | Bonuses.VampiresGist | Bonuses.AncientVampiresGist | Bonuses.Dodging:
-               return this.pierce(sender)
+            case Bonuses.DefencePiercing:
+            case Bonuses.VampiresGist:
+            case Bonuses.AncientVampiresGist:
+            case Bonuses.Dodging:
+                return this.pierce(sender);
+
             case Bonuses.PoisonAttack:
                 if (!receiver.hasEffectKind(EffectKind.Poison) && receiver.info.charType !== CharType.Undead) {
                     if (damage.range > 1 || damage.melee > 1) {
@@ -88,18 +111,22 @@ export class Bonus {
                     }
                 }
                 return damage;
+
             case Bonuses.GodAnger:
                 damage.melee += 10;
                 return damage;
+
             case Bonuses.GodStrike:
                 damage.melee += 20;
                 return damage;
+
             case Bonuses.FlankStrike:
                 if (damage.melee > 0 && Math.abs(receiver.charPos.x - sender.charPos.x) > 1) {
-                    damage.melee += Math.max(0, sender.modified.damage.melee - receiver.modified.defence.meleeUnits / 2)
+                    damage.melee += Math.max(0, sender.modified.damage.melee - receiver.modified.defence.meleeUnits / 2);
                 }
                 return damage;
-            default: return CharPower.empty();
+
+            default: return damage;
         }
     }
 
@@ -139,5 +166,33 @@ export class Bonus {
         } else {
             return { magic: 0, range: range, melee: 0 };
         }
+    }
+
+    private static minimalDamage(damage: CharPower, defaultDamage: number): CharPower {
+        return {
+            magic: Math.min(damage.magic, defaultDamage),
+            range: Math.min(damage.range, defaultDamage),
+            melee: Math.min(damage.melee, defaultDamage),
+        };
+    }
+
+    private static adjustDamage(damage: CharPower, adjustment: number): CharPower {
+        return this.minimalDamage(damage, adjustment);
+    }
+
+    private static handleGhost(damage: CharPower, receiver: Character, sender: Character): CharPower {
+        let correctedGhostDamage = this.minimalDamage(damage, 1).magic;
+        if (receiver.modified.hp - correctedGhostDamage < 1 && sender.modified.defence.deathMagic <= DEATH_MAGIC_THRESHOLD * sender.modified.maxMoves) {
+            sender.kill();
+        }
+        return { magic: damage.magic, range: 0, melee: 0 };
+    }
+
+    private static handleDeathCurse(damage: CharPower, receiver: Character, sender: Character): CharPower {
+        let correctedCurseDamage = this.minimalDamage(damage, 1).magic;
+        if (receiver.modified.hp - correctedCurseDamage < 1) {
+            sender.kill();
+        }
+        return damage;
     }
 }

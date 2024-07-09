@@ -35,6 +35,7 @@ const BoardComponent: FC<BoardProps> = (
     }
 
     function highlightCells() {
+        // console.log('highlight cells | board.activeCell: ', board.activeCell)
         board.searchInteractions()
         updateBoard()
     }
@@ -44,23 +45,27 @@ const BoardComponent: FC<BoardProps> = (
     }
 
     function switchTurn() {
+        // console.log('switchTurn | board.activeCell: ', board.activeCell)
         const nextCell = board.searchNextActive();
         setCurrentCell(nextCell);
     }
 
     function click(targetCell: Cell) {
-        if (!currentCell || !currentCell.character) return;
+        if (currentCell && currentCell.character) {
+            const army = currentCell.army;
+            const currentChar = currentCell.character;
+            const targetChar = targetCell.character
 
-        const army = currentCell.army;
-        if (army.canMove(currentCell, targetCell)) {
-            army.move(currentCell, targetCell);
+            if (army.canMove(currentCell, targetCell)) {
+                army.move(currentCell, targetCell);
+                setCurrentCell(targetCell)
+            } else if (targetChar && currentCell.character.canAttack(targetChar)) {
+                currentChar.attack(targetChar)
+                currentChar.useMove()
+            } else if (currentCell === targetCell) {
+                currentChar.useMove()
+            }
         }
-
-        if (targetCell === currentCell) {
-            currentCell.character.modified.moves -= 1;
-            currentCell.character.modified.initiative = 0;
-        }
-
         switchTurn();
         updateBoard();
     }

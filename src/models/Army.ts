@@ -24,16 +24,21 @@ export class Army {
         this.playerType = playerType;
         this.cells = [];
         this.initCells()
+
     }
 
     initCells(): Army {
-        const rowsOrder = [armyStructure.rangeRow, armyStructure.frontRow];
-        const isTop = this.playerType === 'top';
+        const rowsOrder = this.playerType === PlayerType.FIRST
+            ? [armyStructure.rangeRow, armyStructure.frontRow]
+            : [armyStructure.frontRow, armyStructure.rangeRow];
 
-        for (let i = 0; i < armyStructure.rows; i++) {
+        const startIndex = this.playerType === PlayerType.FIRST ? 0 : armyStructure.rows - 1;
+        const endIndex = this.playerType === PlayerType.FIRST ? armyStructure.rows : -1;
+        const step = this.playerType === PlayerType.FIRST ? 1 : -1;
+
+        for (let i = startIndex; i !== endIndex; i += step) {
             const row: Cell[] = [];
-            const rowIndex = isTop ? i : armyStructure.rows - 1 - i;
-            const cellRow = rowsOrder[rowIndex];
+            const cellRow = rowsOrder[this.playerType === PlayerType.FIRST ? i : armyStructure.rows - 1 - i];
 
             for (let j = 0; j < armyStructure.cells; j++) {
                 row.push(new Cell(j, i, null, cellRow[j], this));
@@ -42,8 +47,29 @@ export class Army {
             this.cells.push(row);
         }
 
-        return this
+        return this;
     }
+
+    // initCells(): Army {
+    //     const isTop = this.playerType === 'top';
+    //     const rowsOrder = isTop
+    //         ? [armyStructure.rangeRow, armyStructure.frontRow]
+    //         : [armyStructure.frontRow, armyStructure.rangeRow];
+    //
+    //     for (let i = 0; i < armyStructure.rows; i++) {
+    //         const row: Cell[] = [];
+    //         const cellRow = rowsOrder[i];
+    //
+    //         for (let j = 0; j < armyStructure.cells; j++) {
+    //             row.push(new Cell(j, i, null, cellRow[j], this));
+    //         }
+    //
+    //
+    //         this.cells.push(row);
+    //     }
+    //
+    //     return this;
+    // }
 
     assignCharacters(assignments: CharacterAssignment[]): void {
         assignments.forEach(({ coordinate, character }) => {
@@ -54,7 +80,9 @@ export class Army {
                     console.warn(`Cell at (${x}, ${y}) already has a character`);
                     return;
                 }
+
                 cell.setCharacter(character);
+
             } else {
                 console.warn(`Invalid coordinate (${x}, ${y})`);
             }
@@ -72,12 +100,14 @@ export class Army {
         if (targetCell.cellType === TENT) return true
 
         const isHorizontalPathClear = (y: number, minX: number, maxX: number) => {
+            console.log('this.cells[y]: ', y, this.cells[y])
             for (let x = minX + 1; x < maxX; x++) {
+
                 if (this.cells[y][x].character) {
                     return false;
                 }
             }
-            console.log('isHorizontalPathClear')
+            // console.log('isHorizontalPathClear true:', y, minX, maxX)
             return true;
         };
 
@@ -87,7 +117,7 @@ export class Army {
                     return false; // Character found in the path
                 }
             }
-            console.log('isVerticalPathClear')
+
             return true;
         };
 
@@ -103,7 +133,7 @@ export class Army {
                 x += xStep;
                 y += yStep;
             }
-            console.log('isDiagonalPathClear')
+
             return true;
         };
 
@@ -132,6 +162,7 @@ export class Army {
     move(currentCell: Cell, targetCell: Cell) {
         const char = currentCell.character
         if (!char) return
+        char.useMove()
         currentCell.character = null
         targetCell.setCharacter(char)
     }

@@ -1,7 +1,7 @@
 import {CellType, MELEE, RANGE, TENT} from "../CellType";
 
 import logo from '../../assets/melee.jpg'
-import {ModifyCharStats} from "./CharactersStats";
+import {Modify, ModifyCharStats} from "./CharactersStats";
 import {AttackMagic, DisableMagic, Effect, EffectKind, ElementalSupport, HealMagic} from "../effects/Effect";
 import {calcPerc} from "../../utils";
 import {Army, armyStructure} from "../Army";
@@ -84,12 +84,13 @@ export class CharStats {
     defence: CharDefence
     moves: number;
     maxMoves: number;
-    initiative: number
-    vamp: number;
-    regen: number;
+    initiative: number;
+    maxInitiative: number;
+    vampiring: number;
+    regeneration: number;
 
     constructor(hp: number, maxHp: number, damage: CharPower, defence: CharDefence, moves: number, maxMoves: number,
-                initiative: number, vamp: number, regen: number) {
+                initiative: number, maxInitiative: number, vampiring: number, regeneration: number) {
         this.hp = hp;
         this.maxHp = maxHp;
         this.damage = damage;
@@ -97,12 +98,13 @@ export class CharStats {
         this.moves = moves;
         this.maxMoves = maxMoves;
         this.initiative = initiative;
-        this.vamp = vamp;
-        this.regen = regen;
+        this.maxInitiative = maxInitiative;
+        this.vampiring = vampiring;
+        this.regeneration = regeneration;
     }
 
     static empty() {
-        return new CharStats(0, 0, CharPower.empty(), CharDefence.empty(), 0, 0, 0, 0, 0);
+        return new CharStats(0, 0, CharPower.empty(), CharDefence.empty(), 0, 0, 0,0, 0, 0);
     }
 }
 
@@ -191,7 +193,7 @@ export class Character {
         this.modify = new ModifyCharStats();
         this.bonus = bonus;
         this.charPos = charPos;
-        this.recalc();
+        this.reCalc();
     }
 
     fieldType(index: number): CellType {
@@ -204,29 +206,32 @@ export class Character {
         return MELEE
     }
 
-    recalc() {
+    reCalc() {
+        // console.log('this.stats: ', this.stats, 'this.modified: ', this.modified, 'this.modify: ', this.modify)
         this.modified = this.modify.apply(this.stats);
     }
 
-    healChar(target: Character, damage: CharPower, magicType: MagicType): boolean {
-        if ([CharType.People].includes(target.info.charType) && magicType === MagicType.Death) {
-            return false;
-        }
-        if ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life) {
-            return false;
-        }
+    private canHealOrBless(target: Character, magicType: MagicType): boolean {
+        return !([CharType.People].includes(target.info.charType) && magicType === MagicType.Death) &&
+               !([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life) &&
+               !target.hasEffectKind(EffectKind.MageSupport)
+    }
 
-        return target.heal(damage.magic);
+    private adjustMagicDamage(target: Character, damage: CharPower, magicType: MagicType): void {
+        if ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life) {
+            damage.magic *= 2;
+        }
+    }
+
+    healChar(target: Character, damage: CharPower, magicType: MagicType): boolean {
+        if (!this.canHealOrBless(target, magicType)) {
+            return false
+        }
+        return target.heal(damage.magic)
     }
 
     blessChar(target: Character, damage: CharPower, magicType: MagicType): boolean {
-        if ([CharType.People].includes(target.info.charType) && magicType === MagicType.Death) {
-            return false;
-        }
-        if ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life) {
-            return false;
-        }
-        if (target.hasEffectKind(EffectKind.MageSupport)) {
+        if (!this.canHealOrBless(target, magicType)) {
             return false;
         }
 
@@ -235,10 +240,7 @@ export class Character {
     }
 
     healBless(target: Character, damage: CharPower, magicType: MagicType): boolean {
-        if ([CharType.People].includes(target.info.charType) && magicType === MagicType.Death) {
-            return false;
-        }
-        if ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life) {
+        if (!this.canHealOrBless(target, magicType)) {
             return false;
         }
 
@@ -261,10 +263,7 @@ export class Character {
         if (!this.info.magicType) {
             return false
         }
-        if ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life) {
-            damage.magic *= 2;
-        }
-
+        this.adjustMagicDamage(target, damage, magicType);
         target.addEffect(new AttackMagic(target.correctDamage(damage, this.info.magicType.type).magic))
         return true;
     }
@@ -283,18 +282,13 @@ export class Character {
     }
 
     magicAttack(target: Character, damage: CharPower, magicType: MagicType): boolean {
-        if ([CharType.Undead].includes(target.info.charType) && magicType === MagicType.Life) {
-            damage.magic *= 2;
-        }
-
+        this.adjustMagicDamage(target, damage, magicType);
         if (this.magicCurse(target, damage, magicType)) {
             return false
         }
-
         damage.melee = 0;
         damage.range = 0;
         target.underAttack(this, damage);
-
         return true;
     }
 
@@ -309,286 +303,166 @@ export class Character {
 
     canAttack(target: Character): boolean {
         // TODO: flank attack check
-        const effected = this.modified;
-        const isEnemy = this.charPos.cell?.getArmy() !== target.charPos.cell?.getArmy()
+        const isEnemy = this.isEnemy(target);
+        if (this.isBlocked() || this.isTent(target)) return false
+        if (this.canMeleeAttack(target, isEnemy) || this.canRangeAttack(isEnemy)) return true
+        return this.canMagicAttack(target, isEnemy)
+    }
+
+    attack(target: Character): boolean {
+        const isEnemy = this.isEnemy(target);
+        if (this.isBlocked() || this.isTent(target)) return false
+        if (this.executeMeleeAttack(target, isEnemy) || this.executeRangeAttack(target, isEnemy)) return true
+        return this.executeMagicAttack(target, isEnemy);
+    }
+
+    private isEnemy(target: Character) {
+        return this.charPos.cell?.getArmy() !== target.charPos.cell?.getArmy();
+    }
+
+    private isBlocked(): boolean {
         const charField = this.fieldType(this.charPos.getIndex());
-        const targetField = this.fieldType(target.charPos.getIndex());
-        const damage = effected.damage;
+        return charField === TENT;
+    }
 
-        if (charField === TENT || targetField === TENT) {
-            return false;
-        }
+    private isTent(target: Character): boolean {
+        const targetField = target.fieldType(target.charPos.getIndex())
+        return targetField === TENT;
+    }
 
-        if (damage.melee > 0
-            && this.charPos.y === target.charPos.y
-            && Math.abs(target.charPos.x - this.charPos.x) < 2
-            && isEnemy) {
+    private canMeleeAttack(target: Character, isEnemy: boolean): boolean {
+        const damage = this.modified.damage;
+        return damage.melee > 0 &&
+            this.charPos.y === target.charPos.y &&
+            Math.abs(target.charPos.x - this.charPos.x) < 2 &&
+            isEnemy
+    }
+
+    private canRangeAttack(isEnemy: boolean): boolean {
+        const damage = this.modified.damage;
+        const charField = this.fieldType(this.charPos.getIndex())
+        return damage.range > 0 && charField === RANGE && isEnemy;
+    }
+
+    private canMagicAttack(target: Character, isEnemy: boolean): boolean {
+        if (!this.info.magicType) return false
+        return this.evaluateMagicType(target, isEnemy)
+    }
+
+    private executeMeleeAttack(target: Character, isEnemy: boolean): boolean {
+        const damage = this.modified.damage
+        console.log('melee attack, damage: ', damage)
+        if (this.canMeleeAttack(target, isEnemy)) {
+            damage.range = 0;
+            damage.magic = 0;
+            target.underAttack(this, damage)
             return true
         }
+        return false
+    }
 
-        if (damage.range > 0
-            && charField === RANGE
-            && isEnemy) {
-            return true
-        }
-
-        if (!this.info.magicType) {
-            return false;
-        }
-
-        const magicType = this.info.magicType.type
-        const direction = this.info.magicType.direction;
-
-        switch (direction) {
-            case MagicDirection.ToAlly:
-                switch (magicType) {
-                    case MagicType.Death:
-                        if (target.info.charType === CharType.People) {
-                            return false;
-                        }
-                        break;
-                    case MagicType.Life:
-                        if (target.info.charType === CharType.Undead) {
-                        return false;
-                    }
-                        break;
-                    case MagicType.Elemental:
-                        return !target.hasEffectKind(EffectKind.MageSupport);
-                }
-                break;
-
-            case MagicDirection.ToAll:
-                switch (magicType) {
-                    case MagicType.Death:
-                    case MagicType.Life:
-                        if (isEnemy && charField === RANGE) {
-                            return true
-                        }
-                        switch (target.info.charType) {
-                            case CharType.People:
-                                if (magicType === MagicType.Death) {
-                                    return false;
-                                }
-                                break;
-                            case CharType.Undead:
-                                if (magicType === MagicType.Life) {
-                                    return false
-                                }
-                                break;
-                        }
-                        break;
-                    case MagicType.Elemental:
-                        return isEnemy
-                            ? charField === RANGE
-                            : !target.hasEffectKind(EffectKind.MageSupport);
-                }
-                break;
-
-            case MagicDirection.ToEnemy:
-            case MagicDirection.CurseOnly:
-            case MagicDirection.StrikeOnly:
-                switch (magicType) {
-                    case MagicType.Death:
-                    case MagicType.Elemental:
-                    case MagicType.Life:
-                        return isEnemy ? charField === RANGE : false;
-                }
-                break;
-
-            case MagicDirection.BlessOnly:
-                if (isEnemy) {
-                    return false;
-                }
-                switch (magicType) {
-                    case MagicType.Death:
-                    case MagicType.Life:
-                        switch (target.info.charType) {
-                            case CharType.People:
-                                if (magicType === MagicType.Death) {
-                                    return false
-                                }
-                                break;
-                            case CharType.Undead:
-                                if (magicType === MagicType.Life) {
-                                    return false;
-                                }
-                                break;
-                        }
-                        break;
-                    case MagicType.Elemental:
-                        return !target.hasEffectKind(EffectKind.MageSupport);
-                }
-                break;
-
-            case MagicDirection.CureOnly:
-                if (isEnemy || magicType === MagicType.Elemental) {
-                    return false
-                }
-                switch (target.info.charType) {
-                    case CharType.People:
-                        if (magicType === MagicType.Death) {
-                            return false;
-                        }
-                        break;
-                    case CharType.Undead:
-                        if (magicType === MagicType.Life) {
-                            return false;
-                        }
-                        break;
-                }
-                break;
+    private executeRangeAttack(target: Character, isEnemy: boolean): boolean {
+        const damage = this.modified.damage;
+        if (this.canRangeAttack(isEnemy)) {
+            damage.melee = 0;
+            damage.magic = 0;
+            target.underAttack(this, damage);
+            return true;
         }
         return false;
     }
 
-    attack(target: Character): boolean {
-        const effected = this.modified;
-        const isEnemy = this.charPos.cell?.getArmy() !== target.charPos.cell?.getArmy()
-        const charField = this.fieldType(this.charPos.getIndex());
-        const targetField = this.fieldType(target.charPos.getIndex());
-        const damage = effected.damage;
+    private executeMagicAttack(target: Character, isEnemy: boolean): boolean {
+        if (!this.info.magicType) return false;
+        return this.applyMagicAttack(target, isEnemy);
+    }
 
-        if (charField === TENT || targetField === TENT) {
-            return false;
-        }
-
-        if (damage.range > 0
-            && ((this.charPos.y === target.charPos.y && Math.abs(this.charPos.x - target.charPos.x) < 2)
-                || charField === RANGE)
-            && isEnemy) {
-                damage.melee = 0;
-                damage.magic = 0;
-                target.underAttack(this, damage);
-                return true;
-        }
-
-        if (damage.melee > 0
-            && this.charPos.y === target.charPos.y
-            && Math.abs(target.charPos.x - this.charPos.x) < 2
-            && charField === MELEE
-            && isEnemy) {
-                damage.range = 0;
-                damage.magic = 0;
-                target.underAttack(this, damage);
-                return true
-        }
-
-        if (!this.info.magicType) {
-            return false;
-        }
-
+    private evaluateMagicType(target: Character, isEnemy: boolean): boolean {
         const magicType = this.info.magicType.type
+        const magicDirection = this.info.magicType.direction
+
+        switch (magicDirection) {
+            case MagicDirection.ToAlly:
+                return this.evaluateMagicToAlly(target, magicType);
+            case MagicDirection.ToAll:
+                return this.evaluateMagicToAll(target, isEnemy, magicType);
+            case MagicDirection.ToEnemy:
+            case MagicDirection.CurseOnly:
+            case MagicDirection.StrikeOnly:
+                return this.evaluateMagicToEnemy(isEnemy, magicType);
+            case MagicDirection.BlessOnly:
+                return this.evaluateMagicBlessOnly(target, isEnemy, magicType);
+            case MagicDirection.CureOnly:
+                return this.evaluateMagicCureOnly(target, isEnemy, magicType);
+            default:
+                return false;
+        }
+    }
+
+    private evaluateMagicToAlly(target: Character, magicType: MagicType): boolean {
+        switch (magicType) {
+            case MagicType.Death:
+                return target.info.charType !== CharType.People;
+            case MagicType.Life:
+                return target.info.charType !== CharType.Undead;
+            case MagicType.Elemental:
+                return !target.hasEffectKind(EffectKind.MageSupport);
+            default:
+                return false;
+        }
+    }
+
+    private evaluateMagicToAll(target: Character, isEnemy: boolean, magicType: MagicType): boolean {
+        if (isEnemy) {
+            return this.fieldType(this.charPos.getIndex()) === RANGE;
+        } else {
+            return this.evaluateMagicToAlly(target, magicType);
+        }
+    }
+
+    private evaluateMagicToEnemy(isEnemy: boolean, magicType: MagicType): boolean {
+        if (!isEnemy) return false;
+        return this.fieldType(this.charPos.getIndex()) === RANGE;
+    }
+
+    private evaluateMagicBlessOnly(target: Character, isEnemy: boolean, magicType: MagicType): boolean {
+        if (isEnemy) return false;
+        return this.evaluateMagicToAlly(target, magicType);
+    }
+
+    private evaluateMagicCureOnly(target: Character, isEnemy: boolean, magicType: MagicType): boolean {
+        if (isEnemy) return false;
+        return this.evaluateMagicToAlly(target, magicType);
+    }
+
+    private applyMagicAttack(target: Character, isEnemy: boolean): boolean {
+        const magicType = this.info.magicType.type;
         const direction = this.info.magicType.direction;
 
         switch (direction) {
             case MagicDirection.ToAlly:
-                switch (magicType) {
-                    case MagicType.Death:
-                    case MagicType.Life:
-                        return this.healBless(target, damage, magicType)
-                    case MagicType.Elemental:
-                        return this.elementalBless(target, damage)
-                }
-                break;
-
             case MagicDirection.ToAll:
-                switch (magicType) {
-                    case MagicType.Death:
-                    case MagicType.Life:
-                        if (isEnemy) {
-                            if (charField !== RANGE) {
-                                return false;
-                            }
-                            return this.magicAttack(target, damage, magicType);
-                        } else {
-                            return this.healBless(target, damage, magicType);
-                        }
-
-                    case MagicType.Elemental:
-                        if (isEnemy) {
-                            if (charField !== RANGE) {
-                                return false;
-                            }
-                            return this.elementalAttack(target, damage)
-                        } else {
-                            return this.elementalBless(target, damage)
-                        }
-                }
-                break;
-
-            case MagicDirection.ToEnemy:
-                if (charField !== RANGE && !isEnemy) {
-                    return false
-                }
-                switch (magicType) {
-                    case MagicType.Death:
-                    case MagicType.Life:
-                        return this.magicAttack(target, damage, magicType);
-                    case MagicType.Elemental:
-                        return this.elementalAttack(target, damage);
-                }
-
-                break;
-
-            case MagicDirection.CurseOnly:
-                if (!isEnemy) {
-                    return false
-                }
-                switch (magicType) {
-                    case MagicType.Death:
-                    case MagicType.Life:
-                        return this.magicAttack(target, damage, magicType);
-                    case MagicType.Elemental:
-                        return this.elementalAttack(target, damage);
-                }
-
-                break;
-
-            case MagicDirection.StrikeOnly:
-                if (isEnemy) {
-                    damage.melee = 0;
-                    damage.range = 0;
-                    target.underAttack(this, damage);
-                    return true
-                }
-
-                break;
-
             case MagicDirection.BlessOnly:
-                if (isEnemy) {
-                    return false;
-                }
-                    switch (magicType) {
-                        case MagicType.Death:
-                        case MagicType.Life:
-                            return this.blessChar(target, damage, magicType);
-                        case MagicType.Elemental:
-                            return this.elementalBless(target, damage);
-                    }
-                break;
-
             case MagicDirection.CureOnly:
-                if (!isEnemy) {
-                    if (magicType === MagicType.Life || magicType === MagicType.Death) {
-                        this.healChar(target, damage, magicType)
-                    }
-                }
-                break;
-
-            default: return false;
+                return this.blessChar(target, this.modified.damage, magicType);
+            case MagicDirection.ToEnemy:
+            case MagicDirection.CurseOnly:
+            case MagicDirection.StrikeOnly:
+                return this.magicAttack(target, this.modified.damage, magicType);
+            default:
+                return false;
         }
-        return false;
     }
 
     heal(amount: number): boolean {
         const effected = this.modified;
         if (effected.maxHp < effected.hp + amount) {
             this.stats.hp = effected.maxHp;
-            this.recalc();
+            this.reCalc();
             return true
         }
         this.stats.hp += amount;
-        this.recalc();
+        this.reCalc();
         return false;
     }
 
@@ -602,23 +476,17 @@ export class Character {
 
     kill(): void {
         this.stats.hp = -this.modified.hp;
-        this.recalc();
+        this.reCalc();
     }
 
     hasEffectKind(effectKind: EffectKind): boolean {
-        this.effects.forEach((effect) => {
-            if (effect.getKind && effect.getKind() === effectKind) {
-                return true
-            }
-        })
-        return false
+        return this.effects.some(effect => effect.getKind && effect.getKind() === effectKind);
     }
 
     addEffect(effect: Effect): boolean {
         this.effects.push(effect);
-        const lastEffect = this.effects[this.effects.length - 1];
-        lastEffect.updateStats(this)
-        this.recalc()
+        this.effects[this.effects.length - 1].updateStats(this);
+        this.reCalc()
         return true
     }
 
@@ -642,74 +510,92 @@ export class Character {
     underAttack(sender: Character, damage: CharPower): number {
         let correctedDamage = this.correctDamage(damage, sender.info.magicType.type);
         const senderBonus = sender.getBonus();
+
         correctedDamage = Bonus.onAttacking(senderBonus, correctedDamage, this, sender);
         correctedDamage = Bonus.onAttacked(this.getBonus(), correctedDamage, this, sender);
+
         let correctedDamageUnits = correctedDamage.melee + correctedDamage.range + correctedDamage.magic;
-        if (correctedDamageUnits === 0) {
-            correctedDamageUnits = 1;
-        }
-        if (correctedDamageUnits > this.modified.hp) {
-            this.stats.hp = -this.modified.hp;
-        } else {
-            this.stats.hp -= correctedDamageUnits;
-        }
-        this.recalc();
+        correctedDamageUnits = Math.max(correctedDamageUnits, 1);
+
+        this.stats.hp = Math.max(this.stats.hp - correctedDamageUnits, -this.modified.hp);
+
+        this.reCalc();
         return correctedDamageUnits;
     }
 
     correctDamage(damage: CharPower, magicType: MagicType): CharPower {
         const { magic, range, melee } = damage;
         const { deathMagic, elementalMagic, lifeMagic, meleePercent, rangePercent,
-            magicUnits, meleeUnits, rangeUnits } = this.modified.defence;
-        const basicPercentage = 100;
+                magicUnits, meleeUnits, rangeUnits } = this.modified.defence;
 
-        const magicPercent =
-            magicType === MagicType.Life ? lifeMagic :
-            magicType === MagicType.Death ? deathMagic :
-            magicType === MagicType.Elemental ? elementalMagic : 0;
 
-        const adjustDamage = (damage: number, units: number) => Math.max(damage - units, 0);
-        const adjustDefence = (defence: number) => Math.max(basicPercentage - defence, 0);
+        const magicPercent = this.getMagicDefencePercent(magicType, deathMagic, elementalMagic, lifeMagic);
 
-        const adjustedMagic = adjustDamage(magic, magicUnits);
-        const adjustedRange = adjustDamage(range, rangeUnits);
-        const adjustedMelee = adjustDamage(melee, meleeUnits);
-
-        return {
-            magic: calcPerc(adjustedMagic, adjustDefence(magicPercent)),
-            range: calcPerc(adjustedRange, adjustDefence(rangePercent)),
-            melee: calcPerc(adjustedMelee, adjustDefence(meleePercent))
+        const adjustedDamage = {
+            magic: this.adjustDamage(magic, magicUnits, magicPercent),
+            range: this.adjustDamage(range, rangeUnits, rangePercent),
+            melee: this.adjustDamage(melee, meleeUnits, meleePercent)
         };
+
+        return adjustedDamage;
+    }
+
+    private getMagicDefencePercent(magicType: MagicType, deathMagic: number, elementalMagic: number, lifeMagic: number): number {
+        switch (magicType) {
+            case MagicType.Life:
+                return lifeMagic;
+            case MagicType.Death:
+                return deathMagic;
+            case MagicType.Elemental:
+                return elementalMagic;
+            default:
+                return 0;
+        }
+    }
+
+    private adjustDamage(damage: number, units: number, percent: number): number {
+        const basicPercentage = 100;
+        const adjustedDamage = Math.max(damage - units, 0);
+        const adjustedDefence = Math.max(basicPercentage - percent, 0);
+        return calcPerc(adjustedDamage, adjustedDefence)
     }
 
     tick(): void {
-        for (let i = 0; i < this.effects.length; i++) {
-            let effect = this.effects.splice(i, 1)[0];
+        const effectsToProcess = [...this.effects];
+        this.effects = [];
+        for (const effect of effectsToProcess) {
             if (typeof effect.onTick === "function") {
-                effect.onTick();
+                effect.onTick()
             }
 
             if (effect.isFinished()) {
                 effect.finish(this);
-                i--;
             } else {
-                this.effects.push(effect);
+                this.effects.push(effect)
             }
         }
+
     }
 
+     useMove() {
+         this.stats.moves -= 1
+
+         if ( this.stats.moves < 1) {
+             this.stats.initiative = 0;
+         }
+
+         this.reCalc();
+    }
+
+    restoreMove() {
+        this.tick();
+        this.stats.moves = this.modified.maxMoves
+        this.stats.initiative = this.modified.maxInitiative
+        this.reCalc();
+    }
 }
 
 
-
-//
-//     canAttack(target: Cell): boolean {
-//         if (target.playerType !== this.playerType && target.character) {
-//             return true
-//         }
-//         return false
-//     }
-//
 //     resetStats() {
 //         this.currentActions = this.actions
 //         this.currentInitiative = this.initiative
@@ -726,9 +612,7 @@ export class Character {
 //         return this.cell
 //     }
 //
-//     useAction() {
-//         this.currentActions = this.currentActions - 1;
-//     }
+
 //
 //     getCurrentHits(): number {
 //         return this.currentHits
