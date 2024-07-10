@@ -3,7 +3,7 @@ import {CellType, MELEE, RANGE, TENT} from "../CellType";
 import logo from '../../assets/melee.jpg'
 import {Modify, ModifyCharStats} from "./CharactersStats";
 import {AttackMagic, DisableMagic, Effect, EffectKind, ElementalSupport, HealMagic} from "../effects/Effect";
-import {calcPerc} from "../../utils";
+import {calcPerc, logs} from "../../utils";
 import {Army, armyStructure} from "../Army";
 import {Bonus, Bonuses} from "../bonuses/Bonus";
 import {Cell} from "../Cell";
@@ -257,6 +257,7 @@ export class Character {
     }
 
     magicCurse(target: Character, damage: CharPower, magicType: MagicType) :boolean {
+        console.log('Magic Curse')
         if (target.hasEffectKind(EffectKind.MageCurse)) {
             return false
         }
@@ -269,6 +270,7 @@ export class Character {
     }
 
     elementalCurse(target: Character, damage: CharPower): boolean {
+        console.log('Elemental Curse')
         if (target.hasEffectKind(EffectKind.MageCurse)) {
             return false
         }
@@ -282,6 +284,7 @@ export class Character {
     }
 
     magicAttack(target: Character, damage: CharPower, magicType: MagicType): boolean {
+        console.log('Magic Attack')
         this.adjustMagicDamage(target, damage, magicType);
         if (this.magicCurse(target, damage, magicType)) {
             return false
@@ -331,6 +334,7 @@ export class Character {
     }
 
     private canMeleeAttack(target: Character, isEnemy: boolean): boolean {
+
         const damage = this.modified.damage;
         return damage.melee > 0 &&
             this.charPos.y === target.charPos.y &&
@@ -351,7 +355,6 @@ export class Character {
 
     private executeMeleeAttack(target: Character, isEnemy: boolean): boolean {
         const damage = this.modified.damage
-        console.log('melee attack, damage: ', damage)
         if (this.canMeleeAttack(target, isEnemy)) {
             damage.range = 0;
             damage.magic = 0;
@@ -484,9 +487,12 @@ export class Character {
     }
 
     addEffect(effect: Effect): boolean {
+
         this.effects.push(effect);
         this.effects[this.effects.length - 1].updateStats(this);
+        logs(this.effects[this.effects.length - 1], 'this.effects[this.effects.length - 1]')
         this.reCalc()
+        console.log(this)
         return true
     }
 
@@ -527,7 +533,6 @@ export class Character {
         const { magic, range, melee } = damage;
         const { deathMagic, elementalMagic, lifeMagic, meleePercent, rangePercent,
                 magicUnits, meleeUnits, rangeUnits } = this.modified.defence;
-
 
         const magicPercent = this.getMagicDefencePercent(magicType, deathMagic, elementalMagic, lifeMagic);
 

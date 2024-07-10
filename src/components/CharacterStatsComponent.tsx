@@ -9,7 +9,7 @@ const CharacterStatsComponent: FC<CharStatsProps> = ({character}) => {
         <div className="character-stats">
             <div className="char-text-sides">
                 <span>
-                    {'A: ' + character.modified.damage.melee}
+                    {character.modified.damage.melee ? 'A: ' + character.modified.damage.melee : 'P: ' + character.modified.damage.magic}
                 </span>
                 <span>
                     {'D: ' + character.modified.defence.meleeUnits  + '/' + character.modified.defence.rangeUnits}

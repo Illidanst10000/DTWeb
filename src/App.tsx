@@ -2,12 +2,18 @@ import React, {useEffect, useState} from 'react';
 import BoardComponent from "./components/BoardComponent";
 import "./App.css"
 import {Board} from "./models/Board";
-import {Army} from "./models/Army";
+import {Army, CharacterAssignment} from "./models/Army";
 import {Cell} from "./models/Cell";
 import {PlayerType} from "./models/Player";
 import {createCharacter} from "./models/characters/CharacterCreation";
 import {CharactersList} from "./models/characters/CharactersData";
 import {Modify} from "./models/characters/CharactersStats";
+import CharacterWindowComponent from "./components/CharacterWindowComponent";
+
+interface Assignments {
+    top: CharacterAssignment[];
+    bottom: CharacterAssignment[];
+}
 
 const App = () => {
     const [board, setBoard] = useState<Board | null>(null)
@@ -16,44 +22,35 @@ const App = () => {
     const [coordinates, setCoordinates] = useState({ x: 0, y: 0 });
     // const [winner, setWinner] = useState<PlayerType | null> (null)
 
-    const [topArmy, setTopArmy] = useState<Army>(new Army(PlayerType.FIRST))
-    const [bottomArmy, setBottomArmy] = useState<Army>(new Army(PlayerType.SECOND))
-
     useEffect(() => {
-        const assignmentsTop = [
-            { coordinate: { x: 1, y: 1 }, character: createCharacter(CharactersList.KNIGHT) },
-        ];
-        const assignmentsBottom = [
-            { coordinate: { x: 1, y: 1 }, character: createCharacter(CharactersList.HERO_ARCHMAGE) },
-            { coordinate: { x: 2, y: 0 }, character: createCharacter(CharactersList.KNIGHT) },
-        ];
-        const firstArmy = new Army(PlayerType.FIRST)
-        const secondArmy = new Army(PlayerType.SECOND)
+        const assignments: Assignments = {
+            top: [
+                { coordinate: { x: 1, y: 1 }, character: createCharacter(CharactersList.KNIGHT) },
+            ],
+            bottom: [
+                // { coordinate: { x: 1, y: 1 }, character: createCharacter(CharactersList.HERO_ARCHMAGE) },
+                // { coordinate: { x: 2, y: 0 }, character: createCharacter(CharactersList.KNIGHT) },
+            ]
+        };
 
-        firstArmy.assignCharacters(assignmentsTop);
-        secondArmy.assignCharacters(assignmentsBottom);
+        const initializeArmy = (playerType: PlayerType, assignments: CharacterAssignment[]) => {
+            const army = new Army(playerType);
+            army.assignCharacters(assignments);
+            return army;
+        };
 
-        setTopArmy(firstArmy)
-        setBottomArmy(secondArmy)
+        const firstArmy = initializeArmy(PlayerType.FIRST, assignments.top);
+        const secondArmy = initializeArmy(PlayerType.SECOND, assignments.bottom);
+
         const newBoard = new Board(firstArmy, secondArmy, null);
         newBoard.start()
         setCurrentCell(newBoard.activeCell)
         setBoard(newBoard);
     }, []);
 
-    // useEffect(() => {
-    //     console.log('Board activeCell: ', board?.activeCell)
-    // }, [board]);
-
-
-    // useEffect(() => {
-    //     console.log('CurrentCharacter update state', currentCharacter)
-    // }, [currentCharacter]);
-
-
     // Temporary stuff
 
-    function updateBoard() {
+    const updateBoard = () => {
         if (!board) return
         board.searchInteractions()
         const newBoard = board.getCopyBoard()
@@ -65,32 +62,10 @@ const App = () => {
         setCoordinates((prev) => ({ ...prev, [name]: value }));
     };
 
-    const addCharToTop = () => {
-        currentCell?.character?.modify.moves.updateValues(new Modify().add(1))
-        currentCell?.character?.reCalc()
-        // const coords = { x: coordinates.x, y: coordinates.y };
-        //
-        // const assignments = [
-        //     { coordinate: coords, character: createCharacter(CharactersList.KNIGHT) },
-        // ];
-        // topArmy.assignCharacters(assignments);
-        // updateBoard()
-    };
-
-    const addCharToBottom = () => {
-        const coords = { x: coordinates.x, y: coordinates.y };
-
-        const assignments = [
-            { coordinate: coords, character: createCharacter(CharactersList.KNIGHT) },
-        ];
-        bottomArmy.assignCharacters(assignments);
-        updateBoard()
-    };
     return (
 
         <div className="App">
-
-
+            {hoveredCell ? (<CharacterWindowComponent cell={hoveredCell}/>) : (<div/>)}
             {board ? (<BoardComponent board={board} setBoard={setBoard}
                                       currentCell={currentCell}
                                       setCurrentCell={setCurrentCell}
@@ -98,36 +73,8 @@ const App = () => {
                                       setHoveredCell={setHoveredCell}
             />) : (<div></div>)}
 
-            <div className="actions-block">
-
-                <div className="coordinates-input-block">
-                    <label>X Coordinates:</label>
-                    <input
-                        type="number"
-                        name="x"
-                        value={coordinates.x}
-                        onChange={handleCoordinatesChange}
-                        placeholder="X"
-                    />
-                    <label>Y Coordinates:</label>
-                    <input
-                        type="number"
-                        name="y"
-                        value={coordinates.y}
-                        onChange={handleCoordinatesChange}
-                        placeholder="Y"
-                    />
-                </div>
-                <div className="buttons-block">
-                    <div className="add-character-button" onClick={addCharToTop}>
-                        CLICK TO ADD TO TOP
-                    </div>
-                    <div className="add-character-button" onClick={addCharToBottom}>
-                        CLICK TO ADD TO BOTTOM
-                    </div>
-
-                </div>
-            </div>
+            {/*    </div>*/}
+            {/*</div>*/}
             {/*{winner && (*/}
             {/*    <div className={`winner-message ${winner === PlayerType.FIRST ? 'player-1' : 'player-2'}`}>*/}
             {/*        Победил игрок {winner}! Поздравляем*/}

@@ -1,6 +1,6 @@
 import {Character, CharStats, MagicType} from "../characters/Character";
 import {Modify, ModifyCharStats} from "../characters/CharactersStats";
-import {calcPerc} from "../../utils";
+import {calcPerc, logs} from "../../utils";
 
 export enum EffectKind {
     MageCurse,
@@ -214,6 +214,7 @@ export class AttackMagic implements Effect, EffectInfo {
     constructor(magicPower: number) {
         this.lifetime = 1;
         this.magicPower = magicPower;
+        console.log('Attack Magic Effect constructor')
     }
 
     updateStats(char: Character): void {
@@ -221,6 +222,9 @@ export class AttackMagic implements Effect, EffectInfo {
         const defence = char.stats.defence;
         const damageAdd = Math.round(1 + (this.magicPower / 10));
         const defenceAdd = Math.round(1 + (this.magicPower / 5));
+
+        logs(damageAdd, 'damageAdd')
+        logs(defenceAdd, 'defenceAdd')
 
         if (damage.melee) {
             char.modify.damage.melee.updateValues(new Modify().add(-damageAdd))

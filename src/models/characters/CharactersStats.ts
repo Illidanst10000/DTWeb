@@ -55,10 +55,28 @@ export class Modify {
     }
 
     updateValues(otherModify: Modify): void {
-        this.addV = (this.addV ?? 0) + (otherModify.addV ?? 0);
-        this.setV = (this.setV ?? 0) + (otherModify.setV ?? 0);
-        this.percentAddV = (this.percentAddV ?? 0) + (otherModify.percentAddV ?? 0);
-        this.percentSetV = (this.percentSetV ?? 0) + (otherModify.percentSetV ?? 0);
+        if (otherModify.addV !== null) {
+            this.addV = this.addV
+                ? this.addV + otherModify.addV
+                : otherModify.addV;
+        }
+        if (otherModify.setV !== null) {
+            this.setV = this.setV
+                ? this.setV + otherModify.setV
+                : otherModify.setV;
+        }
+
+        if (otherModify.percentAddV !== null) {
+            this.percentAddV = this.percentAddV
+                ? this.percentAddV + otherModify.percentAddV
+                : otherModify.percentAddV;
+        }
+
+        if (otherModify.percentSetV !== null) {
+            this.percentSetV = this.percentSetV
+                ? this.percentSetV + otherModify.percentSetV
+                : otherModify.percentSetV;
+        }
     }
 }
 

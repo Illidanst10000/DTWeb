@@ -10,7 +10,10 @@
     display: flex;
     justify-content: center;
     align-items: center;
-
+    background-image: url("assets/mainbg.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 .winner-message {
@@ -110,14 +113,18 @@
 
 /* Board */
 .board {
-    background-image: url("assets/bg.jpg");
+    background-image: url("assets/board.jpg");
     position: relative;
     background-size: cover;
-    background-position: center;
+
     /*background-size: calc((96px + 5px) * 6) calc((96px) * 4 + (5px * 3));*/
-    /*background-repeat: no-repeat;*/
+    background-repeat: no-repeat;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 700px;
+    height: 720px;
 }
 
 .cell-component {
@@ -125,6 +132,7 @@
     flex-direction: column;
     align-items: flex-start;
     position: relative;
+
 }
 
 .under-cell-container {
@@ -163,7 +171,7 @@
     height: 100%;
     width: 100%;
     background-color: red;
-    opacity: 0.5;
+    opacity: 0.7;
 }
 
 
@@ -262,11 +270,19 @@
 }
 
 .army {
-    width: calc(96px * 6);
+    /*width: calc(96px * 6);*/
     /*height: calc((96px + 41px) * 4);*/
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 5vw;
+    /*flex-wrap: wrap;*/
+    /*align-items: flex-start;*/
+}
+
+.cell-row {
+    display: flex;
 }
 
 .separator {
@@ -339,4 +355,39 @@
     opacity: 0.8;
 }
 
+.char-window {
+    background-image: url("assets/paper.jpg");
+    background-size: 350px 600px;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 350px;
+    height: 600px;
+    background-color: #fff;
+}
 
+.char-window-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-content: flex-start;
+    margin-top: 4vh;
+}
+
+.char-window-info {
+    font-family: 'Cardo', serif;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    width: 80%;
+}
+
+.char-name-title {
+    font-weight: 600;
+    font-size: 24px;
+}
+
+.char-info-stats {
+    display: flex;
+    justify-content: space-between;
+    width: 80%;
+}

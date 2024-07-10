@@ -3,8 +3,10 @@ import {Cell} from "./Cell";
 import {PlayerType} from "./Player";
 import {Character} from "./characters/Character";
 
-
 // TODO: Put the constant in the config. Change initCells() in Army to use configuration values.
+
+type Coordinate = { x: number; y: number };
+export type CharacterAssignment = { coordinate: Coordinate; character: Character };
 export const armyStructure = {
     frontRow: [TENT, MELEE, MELEE, MELEE, MELEE, TENT] as CellType[],
     rangeRow: [TENT, RANGE, RANGE, RANGE, RANGE, TENT] as CellType[],
@@ -12,64 +14,44 @@ export const armyStructure = {
     cells: 6,
     maxChars: 12,
 }
-
-type Coordinate = { x: number; y: number };
-type CharacterAssignment = { coordinate: Coordinate; character: Character };
-
+const rowsOrder = [armyStructure.rangeRow, armyStructure.frontRow]
 
 export class Army {
     cells: Cell[][] = [];
     playerType: PlayerType;
     constructor(playerType: PlayerType) {
         this.playerType = playerType;
-        this.cells = [];
         this.initCells()
-
+        console.log(this.cells)
     }
 
-    initCells(): Army {
-        const rowsOrder = this.playerType === PlayerType.FIRST
-            ? [armyStructure.rangeRow, armyStructure.frontRow]
-            : [armyStructure.frontRow, armyStructure.rangeRow];
-
-        const startIndex = this.playerType === PlayerType.FIRST ? 0 : armyStructure.rows - 1;
-        const endIndex = this.playerType === PlayerType.FIRST ? armyStructure.rows : -1;
-        const step = this.playerType === PlayerType.FIRST ? 1 : -1;
-
-        for (let i = startIndex; i !== endIndex; i += step) {
-            const row: Cell[] = [];
-            const cellRow = rowsOrder[this.playerType === PlayerType.FIRST ? i : armyStructure.rows - 1 - i];
-
-            for (let j = 0; j < armyStructure.cells; j++) {
-                row.push(new Cell(j, i, null, cellRow[j], this));
+    initCells() {
+        console.log('initcells')
+        if (this.playerType === PlayerType.FIRST) {
+            for (let yIndex = 0; yIndex < armyStructure.rows; yIndex++) {
+                this.initRow(yIndex, rowsOrder)
             }
-
-            this.cells.push(row);
+            return
         }
 
-        return this;
+        if (this.playerType === PlayerType.SECOND){
+            for (let yIndex = armyStructure.rows - 1; yIndex >= 0 ; yIndex--) {
+                this.initRow(yIndex, rowsOrder)
+            }
+            return
+        }
+
+        return new Error('Error initializing cells')
     }
 
-    // initCells(): Army {
-    //     const isTop = this.playerType === 'top';
-    //     const rowsOrder = isTop
-    //         ? [armyStructure.rangeRow, armyStructure.frontRow]
-    //         : [armyStructure.frontRow, armyStructure.rangeRow];
-    //
-    //     for (let i = 0; i < armyStructure.rows; i++) {
-    //         const row: Cell[] = [];
-    //         const cellRow = rowsOrder[i];
-    //
-    //         for (let j = 0; j < armyStructure.cells; j++) {
-    //             row.push(new Cell(j, i, null, cellRow[j], this));
-    //         }
-    //
-    //
-    //         this.cells.push(row);
-    //     }
-    //
-    //     return this;
-    // }
+    initRow(yIndex: number, rowsOrder: CellType[][]){
+        const row: Cell[] = []
+        const cellRow = rowsOrder[yIndex];
+        for (let xIndex = 0; xIndex < armyStructure.cells; xIndex++) {
+            row.push(new Cell(xIndex, yIndex, null, cellRow[xIndex], this))
+        }
+        this.cells.push(row)
+    }
 
     assignCharacters(assignments: CharacterAssignment[]): void {
         assignments.forEach(({ coordinate, character }) => {
@@ -100,14 +82,17 @@ export class Army {
         if (targetCell.cellType === TENT) return true
 
         const isHorizontalPathClear = (y: number, minX: number, maxX: number) => {
-            console.log('this.cells[y]: ', y, this.cells[y])
-            for (let x = minX + 1; x < maxX; x++) {
+            const row = this.cells.find(row => row.some(cell => cell.y === y));
+            if (!row) {
+                throw new Error(`Row ${y} is not initialized`);
+            }
 
-                if (this.cells[y][x].character) {
+            for (let x = minX + 1; x < maxX; x++) {
+                if (row.some(cell => cell.x === x && cell.character)) {
                     return false;
                 }
             }
-            // console.log('isHorizontalPathClear true:', y, minX, maxX)
+
             return true;
         };
 
@@ -166,22 +151,4 @@ export class Army {
         currentCell.character = null
         targetCell.setCharacter(char)
     }
-
-    // public highlightCells(selectedCell: Cell | null) {
-    //     for (let i = 0; i < this.cells.length; i++) {
-    //         const row = this.cells[i]
-    //         for (let j = 0; j < row.length; j++) {
-    //             const target = row[j]
-    //
-    //             target.available = !!selectedCell?.character?.canMove(target)
-    //
-    //             if (!target.available) {
-    //                 target.available = !!selectedCell?.character?.canAttack(target)
-    //             }
-    //
-    //         }
-    //     }
-    // }
-
-    
 }

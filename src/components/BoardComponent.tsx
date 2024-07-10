@@ -1,10 +1,11 @@
-import React, {FC, useEffect, useState} from 'react';
+import React, {FC, useEffect} from 'react';
 import CellComponent from "./CellComponent";
 import {Board} from "../models/Board";
 import {Cell} from "../models/Cell";
 import CharacterStatsComponent from "./CharacterStatsComponent";
 import underCellLogo from "./../assets/undercell.png"
 import {Army} from "../models/Army";
+import {PlayerType} from "../models/Player";
 
 interface BoardProps {
     board: Board;
@@ -29,28 +30,25 @@ const BoardComponent: FC<BoardProps> = (
 
     }, [currentCell]);
 
-    function updateBoard() {
+
+    const updateBoard = () => {
         const newBoard = board.getCopyBoard()
         setBoard(newBoard)
     }
 
-    function highlightCells() {
+    const highlightCells = () => {
         // console.log('highlight cells | board.activeCell: ', board.activeCell)
         board.searchInteractions()
         updateBoard()
     }
 
-    function handleCellHover(cell: Cell) {
-        setHoveredCell(cell);
-    }
-
-    function switchTurn() {
+    const switchTurn = () => {
         // console.log('switchTurn | board.activeCell: ', board.activeCell)
         const nextCell = board.searchNextActive();
         setCurrentCell(nextCell);
     }
 
-    function click(targetCell: Cell) {
+    const click = (targetCell: Cell) => {
         if (currentCell && currentCell.character) {
             const army = currentCell.army;
             const currentChar = currentCell.character;
@@ -71,15 +69,17 @@ const BoardComponent: FC<BoardProps> = (
     }
 
     function renderArmy(army: Army) {
-        return army.cells.map((row, index) => (
-            <React.Fragment key={index}>
+
+        return army.cells.map((row, index, cells) => (
+            <div className={"cell-row"} key={index}>
                 {row.map((cell, index) => (
                     <div className="cell-component" key={index}>
                         {currentCell ? <CellComponent
                             click={click}
                             cell={cell}
                             currentCell={currentCell}
-                            onCellHover={handleCellHover}
+                            setHoveredCell={setHoveredCell}
+
                         /> : <div/>}
 
                         {cell.character
@@ -87,7 +87,7 @@ const BoardComponent: FC<BoardProps> = (
                             : <img className="under-cell" src={underCellLogo} alt={"undercell"}/>}
                     </div>
                 ))}
-            </React.Fragment>
+            </div>
         ));
     }
 
