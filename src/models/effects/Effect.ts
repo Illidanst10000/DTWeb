@@ -3,12 +3,13 @@ import {Modify, ModifyCharStats} from "../characters/CharactersStats";
 import {calcPerc, logs} from "../../utils";
 
 export enum EffectKind {
-    MageCurse,
-    MageSupport,
-    Bonus,
-    Item,
-    Potion,
-    Poison,
+    MageCurse = "magic-curse",
+    MageSupport = "mage-support",
+    Bonus = "bonus",
+    Item = "item",
+    Potion = "potion",
+    Poison = "poison",
+    Buff = "buff"
 }
 
 export interface Effect {
@@ -18,7 +19,7 @@ export interface Effect {
     tick?(char: Character): boolean;
     finish(char: Character): void;
     isFinished(): boolean;
-    getKind?(): EffectKind;
+    getKind(): EffectKind;
 }
 
 interface EffectInfo {
@@ -51,14 +52,20 @@ export class MoreMoves implements Effect, EffectInfo {
         char.modify.maxMoves.updateValues(new Modify().add(-1))
         char.modify.moves.updateValues(new Modify().add(-1))
     }
+
+    getKind(): EffectKind {
+        return EffectKind.Buff
+    }
 }
 
 export class HealMagic implements Effect, EffectInfo {
+
     lifetime: number;
     magicPower: number;
     constructor(magicPower: number) {
         this.lifetime = 1
         this.magicPower = magicPower
+        console.log('healmagic')
     }
 
     updateStats(char: Character): void {
@@ -115,6 +122,7 @@ export class DisableMagic implements Effect, EffectInfo {
     constructor(magicPower: number) {
         this.lifetime = 1;
         this.magicPower = magicPower;
+        console.log('DisableMagic')
     }
 
     updateStats(char: Character): void {
@@ -165,6 +173,7 @@ export class ElementalSupport implements Effect, EffectInfo {
     constructor(magicPower: number) {
         this.lifetime = 1;
         this.magicPower = magicPower;
+        console.log('ElementalSupport')
     }
 
     updateStats(char: Character): void {
@@ -214,7 +223,7 @@ export class AttackMagic implements Effect, EffectInfo {
     constructor(magicPower: number) {
         this.lifetime = 1;
         this.magicPower = magicPower;
-        console.log('Attack Magic Effect constructor')
+        console.log('AttackMagic')
     }
 
     updateStats(char: Character): void {
@@ -222,9 +231,6 @@ export class AttackMagic implements Effect, EffectInfo {
         const defence = char.stats.defence;
         const damageAdd = Math.round(1 + (this.magicPower / 10));
         const defenceAdd = Math.round(1 + (this.magicPower / 5));
-
-        logs(damageAdd, 'damageAdd')
-        logs(defenceAdd, 'defenceAdd')
 
         if (damage.melee) {
             char.modify.damage.melee.updateValues(new Modify().add(-damageAdd))
@@ -284,6 +290,7 @@ export class Poison implements Effect, EffectInfo {
     constructor() {
         this.lifetime = -1;
         this.poisonPercent = 15;
+        console.log('Poison')
     }
 
     updateStats(char: Character): void {
@@ -362,6 +369,9 @@ export class ArtilleryEffect implements Effect {
     setLifetime(lifetime: number): ArtilleryEffect {
         this.lifetime = lifetime;
         return this;
+    }
+    getKind(): EffectKind {
+        return EffectKind.Buff
     }
 
 

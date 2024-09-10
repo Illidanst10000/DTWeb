@@ -29,14 +29,14 @@ const CharacterWindowComponent: FC<CharWindowProps> = ({cell}) => {
                                 </div>
 
                                 <div className="char-stat">
+                                    Initiative:
+                                </div>
+
+                                <div className="char-stat">
                                     Moves:
                                 </div>
-                                {/*<div className="char-stat">*/}
-                                {/*    {cell.character.modified.defence.meleeUnits ? "Melee defence: " :*/}
-                                {/*     cell.character.modified.damage.range ? "Range damage:" :*/}
-                                {/*     cell.character.modified.damage.magic ? "Power: " : ""}*/}
-                                {/*</div>*/}
                             </div>
+
                             <div className="char-info-stats-block">
                                 <div className="char-stat">
                                     {cell.character.modified.hp}
@@ -46,6 +46,11 @@ const CharacterWindowComponent: FC<CharWindowProps> = ({cell}) => {
                                         cell.character.modified.damage.range ? cell.character.modified.damage.range :
                                             cell.character.modified.damage.magic ? cell.character.modified.damage.magic : ""}
                                 </div>
+
+                                <div className="char-stat">
+                                    {cell.character.modified.initiative}
+                                </div>
+
                                 <div className="char-stat">
                                     {cell.character.modified.moves}
                                 </div>

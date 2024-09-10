@@ -1,6 +1,8 @@
 import React, {FC, useEffect, useState} from 'react';
 import {Cell} from "../models/Cell";
 import classNames from 'classnames';
+import { motion } from "framer-motion";
+import {Effect} from "../models/effects/Effect";
 
 interface CellProps {
     cell: Cell;
@@ -40,20 +42,31 @@ const CellComponent: FC<CellProps> = ({cell, currentCell, click, setHoveredCell}
         'cell',
         cell.cellType,
         { 'selected': selected },
-        { 'can-action': cell.available && cell.character && cell.character !== currentCell.character },
-        { 'available': cell.available && !cell.character }
+        { 'can-action': cell.available && cell.character && cell.character !== currentCell.character && cell.army !== currentCell.army},
+        { 'available': cell.available && !cell.character ||
+                       cell.available && cell.character && cell.army === currentCell.army && cell !== currentCell}
     );
 
     return (
         <div className={cellClassNames}
+             id={"cell-" + cell.x + '-' + cell.y + '-army-' + cell.army.playerType.toString()}
              onClick={() => click(cell)}
              onMouseEnter={() => onCellHover(cell)}
         >
             {/*{cell.character?.info.icon && <img src={cell.character.info.icon} className="image-with-overlay"/>}*/}
             {cell.character?.info.icon && (
-                <div>
+                <div className={"cell-block"}>
                     <div className="image-with-overlay" style={overlayStyle}></div>
                     <img src={cell.character.info.icon} alt="Character Logo" />
+                    {cell.character.effects ? (
+                        <div className="effects">
+                            {cell.character.effects.map((effect, key) => (
+                                <EffectIcon key={key} effect={effect} />
+                            ))}
+                        </div>
+                    ) : (<></>)}
+
+
                 </div>
 
             )}
@@ -65,3 +78,11 @@ const CellComponent: FC<CellProps> = ({cell, currentCell, click, setHoveredCell}
 
 export default CellComponent;
 
+interface EffectIconProps {
+    effect: Effect;
+}
+const EffectIcon: FC<EffectIconProps> = ({ effect }) => (
+    <div className={`${effect.getKind().toString()}`}>
+
+    </div>
+);

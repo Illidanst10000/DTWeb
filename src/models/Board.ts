@@ -1,15 +1,4 @@
-import {
-    Character,
-    CharDefence,
-    CharInfo,
-    CharInventory, CharPos,
-    CharPower,
-    CharStats,
-    CharType,
-    MagicDirection,
-    MagicType,
-    MagicTypeWithDirection
-} from "./characters/Character";
+
 import {Army} from "./Army";
 import {Bonus, Bonuses} from "./bonuses/Bonus";
 import {Cell} from "./Cell";
@@ -72,11 +61,14 @@ export class Board {
         return !cell.character || cell.character.modified.moves < 1 || cell.character.isDead();
     }
 
+
     searchNextActive(): Cell {
         // console.log('search next active| board.activeCell: ', this.activeCell)
         if (!this.firstArmy.cells.length || !this.secondArmy.cells.length) {
             throw new Error("Invalid army cells");
         }
+
+        this.checkRowFall()
 
         const firstArmyNext = this.findMaxInitiativeCell(this.firstArmy.cells).cell;
         const secondArmyNext = this.findMaxInitiativeCell(this.secondArmy.cells).cell;
@@ -160,7 +152,7 @@ export class Board {
         // this.checkWin();
     }
 
-    checkWin(): void {
+    checkWin(): boolean {
         function checkArmyLost(army: Army): boolean {
             const chars = [];
             for (let cellRow of army.cells) {
@@ -176,32 +168,54 @@ export class Board {
 
         if (this.roundsCount === MaxRounds) {
             this.winner = this.firstArmy;
+            return true
         }
 
         if (checkArmyLost(this.firstArmy)) {
             this.winner = this.secondArmy
+            return true
         }
 
         if (checkArmyLost(this.secondArmy)) {
             this.winner = this.firstArmy
+            return true
         }
+        return false
     }
 
     checkRowFall() {
-        function checkRow(army: Army) {
+        const ROW_Y_CHECK = 1;
+        const FALL_Y_CHECK = 0;
 
-            return true;
+        function checkRow(army: Army) {
+            return army.cells.some(row =>
+                row[0].y === ROW_Y_CHECK && row.some(cell => cell.getCharacter())
+            );
         }
 
         function rowFall(army: Army) {
-
+            for (let row of army.cells) {
+                if (row[0].y === FALL_Y_CHECK) {
+                    for (let cell of row) {
+                        if (cell.getCharacter()) {
+                            const targetRow = army.cells.find(r => r[0].y === ROW_Y_CHECK && r.some(c => c.x === cell.x));
+                            if (targetRow) {
+                                const targetCell = targetRow.find(c => c.x === cell.x);
+                                if (targetCell) {
+                                    army.move(cell, targetCell);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        if (checkRow(this.firstArmy)) {
+        if (!checkRow(this.firstArmy)) {
             rowFall(this.firstArmy)
         }
 
-        if (checkRow(this.secondArmy)) {
+        if (!checkRow(this.secondArmy)) {
             rowFall(this.secondArmy)
         }
     }

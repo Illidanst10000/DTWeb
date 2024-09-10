@@ -1,16 +1,22 @@
 import knightLogo from '../../assets/icons/knight.png';
 import archmageHeroLogo from '../../assets/icons/archmage_hero.png';
+import rangerHeroLogo from '../../assets/icons/ranger_hero.png';
+import saintLogo from '../../assets/icons/saint.png';
 
 import knightPersona from '../../assets/persones/img_0.png'
 import archmageHeroPersona from '../../assets/persones/archmage_hero.png'
+import rangerHeroPersona from '../../assets/persones/ranger_hero.png'
+import saintPersona from '../../assets/persones/saint.png'
 
 import logo from '../../assets/melee.jpg'
 import {CharType, MagicDirection, MagicType, MagicTypeWithDirection} from "./Character";
 import {Bonuses} from "../bonuses/Bonus";
 
 export enum CharactersList {
-    KNIGHT = 1,
-    HERO_ARCHMAGE = 2,
+    KNIGHT = 1 ,
+    HERO_ARCHMAGE ,
+    HERO_RANGER ,
+    SAINT ,
 }
 
 interface CharacterData {
@@ -91,7 +97,7 @@ export const characters: CharacterData = {
     Archmage_Hero: {
         GlobalIndex: 2,
         Info: {
-            Name: "Архимаг",
+            Name: "Archmage",
             Description: "Архимаг способен обращаться к могущественным силам мирозданья, неподвластным простым людям.",
             Icon: archmageHeroLogo,
             Persona: archmageHeroPersona,
@@ -124,6 +130,81 @@ export const characters: CharacterData = {
             Regeneration: 0
         },
         Bonus: Bonuses.Basic
-    }
+    },
+    Ranger_Hero: {
+        GlobalIndex: 3,
+        Info: {
+            Name: "Ranger",
+            Description: "Искусство срельбы дано Следопыту от бога, а знание природы наделяет его несломимой жизненной волей.",
+            Icon: rangerHeroLogo,
+            Persona: rangerHeroPersona,
+            CharacterType: CharType.People,
+            MagicType: {
+                type: MagicType.Basic,
+                direction: MagicDirection.Basic
+            }
+        },
+        Power: {
+            Magic: 0,
+            Range: 30,
+            Melee: 0
+        },
+        Defence: {
+            DeathMagic: 0,
+            ElementalMagic: 0,
+            LifeMagic: 0,
+            HandPercent: 0,
+            RangePercent: 0,
+            MagicUnits: 0,
+            MeleeUnits: 5,
+            RangeUnits: 5
+        },
+        Stats: {
+            Hp: 65,
+            Moves: 2,
+            Initiative: 19,
+            Vampiring: 0,
+            Regeneration: 5
+        },
+        Bonus: Bonuses.Basic
+    },
+    Saint: {
+        GlobalIndex: 4,
+        Info: {
+            Name: "Saint",
+            Description: "Святая - великая целительница и лекарь. Она вырвет вас из лап смерти даже тогда, кода другие отступят.",
+            Icon: saintLogo,
+            Persona: saintPersona,
+            CharacterType: CharType.People,
+            MagicType: {
+                type: MagicType.Life,
+                direction: MagicDirection.ToAlly
+            }
+        },
+        Power: {
+            Magic: 35,
+            Range: 0,
+            Melee: 0
+        },
+        Defence: {
+            DeathMagic: 30,
+            ElementalMagic: 30,
+            LifeMagic: 30,
+            HandPercent: 0,
+            RangePercent: 0,
+            MagicUnits: 0,
+            MeleeUnits: 0,
+            RangeUnits: 0
+        },
+        Stats: {
+            Hp: 65,
+            Moves: 2,
+            Initiative: 28,
+            Vampiring: 0,
+            Regeneration: 25
+        },
+        Bonus: Bonuses.Basic
+    },
+
 
 };

@@ -20,16 +20,18 @@ const App = () => {
     const [currentCell, setCurrentCell] = useState<Cell | null>(null)
     const [hoveredCell, setHoveredCell] = useState<Cell | null>(null)
     const [coordinates, setCoordinates] = useState({ x: 0, y: 0 });
-    // const [winner, setWinner] = useState<PlayerType | null> (null)
+    
 
     useEffect(() => {
         const assignments: Assignments = {
             top: [
+                { coordinate: { x: 1, y: 0 }, character: createCharacter(CharactersList.HERO_RANGER) },
                 { coordinate: { x: 1, y: 1 }, character: createCharacter(CharactersList.KNIGHT) },
             ],
             bottom: [
-                // { coordinate: { x: 1, y: 1 }, character: createCharacter(CharactersList.HERO_ARCHMAGE) },
-                // { coordinate: { x: 2, y: 0 }, character: createCharacter(CharactersList.KNIGHT) },
+                { coordinate: { x: 1, y: 1 }, character: createCharacter(CharactersList.HERO_ARCHMAGE) },
+                { coordinate: { x: 2, y: 1 }, character: createCharacter(CharactersList.SAINT) },
+                { coordinate: { x: 2, y: 0 }, character: createCharacter(CharactersList.KNIGHT) },
             ]
         };
 
@@ -65,7 +67,12 @@ const App = () => {
     return (
 
         <div className="App">
-            {hoveredCell ? (<CharacterWindowComponent cell={hoveredCell}/>) : (<div/>)}
+            {
+             hoveredCell ? (<CharacterWindowComponent cell={hoveredCell}/>) :
+             currentCell ? (<CharacterWindowComponent cell={currentCell}/>) :
+             <div/>
+            }
+
             {board ? (<BoardComponent board={board} setBoard={setBoard}
                                       currentCell={currentCell}
                                       setCurrentCell={setCurrentCell}
