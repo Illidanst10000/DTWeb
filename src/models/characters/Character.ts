@@ -351,7 +351,7 @@ export class Character {
     }
 
     private isEnemy(target: Character) {
-        return this.charPos.cell?.getArmy() !== target.charPos.cell?.getArmy();
+        return this.charPos.cell?.armyID !== target.charPos.cell?.armyID;
     }
 
     private isBlocked(): boolean {

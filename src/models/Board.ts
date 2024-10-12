@@ -1,8 +1,6 @@
-
 import {Army} from "./Army";
-import {Bonus, Bonuses} from "./bonuses/Bonus";
+import {Bonus} from "./bonuses/Bonus";
 import {Cell} from "./Cell";
-import {Modify} from "./characters/CharactersStats";
 
 export const MaxRounds = 25;
 
@@ -40,6 +38,13 @@ export class Board {
                 }
             })
         })
+    }
+
+    getArmyById(armyID: string): Army{
+        if (this.firstArmy.armyID === armyID) return this.firstArmy;
+        if (this.secondArmy.armyID === armyID) return this.secondArmy;
+        // TODO: this is bullshit but ok for now
+        return this.firstArmy
     }
 
     private getCellInitiative(cell: Cell): number {
@@ -117,9 +122,11 @@ export class Board {
         // console.log('active cell:', activeCell, 'targetCell: ', targetCell)
         const activeChar = activeCell.character!;
         targetCell.available = false
+        const activeArmy = this.getArmyById(activeCell.armyID)
+        const targetArmy = this.getArmyById(activeCell.armyID)
         // One army -> can move?
-        if (activeCell.army === targetCell.army) {
-            if (activeCell.army.canMove(activeCell, targetCell)) {
+        if (activeArmy === targetArmy) {
+            if (activeArmy.canMove(activeCell, targetCell)) {
                 targetCell.available = true;
             }
         }

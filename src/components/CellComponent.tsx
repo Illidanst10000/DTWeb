@@ -19,7 +19,7 @@ const CellComponent: FC<CellProps> = ({cell, currentCell, click, setHoveredCell}
         setSelected(
             cell.x === currentCell?.x &&
             cell.y === currentCell?.y &&
-            cell.army === currentCell.army
+            cell.armyID === currentCell.armyID
         );
     }, [currentCell, cell]);
 
@@ -42,14 +42,15 @@ const CellComponent: FC<CellProps> = ({cell, currentCell, click, setHoveredCell}
         'cell',
         cell.cellType,
         { 'selected': selected },
-        { 'can-action': cell.available && cell.character && cell.character !== currentCell.character && cell.army !== currentCell.army},
+        { 'can-action': cell.available && cell.character && cell.character !== currentCell.character && cell.armyID !== currentCell.armyID},
         { 'available': cell.available && !cell.character ||
-                       cell.available && cell.character && cell.army === currentCell.army && cell !== currentCell}
+                       cell.available && cell.character && cell.armyID === currentCell.armyID && cell !== currentCell}
     );
 
     return (
         <div className={cellClassNames}
-             id={"cell-" + cell.x + '-' + cell.y + '-army-' + cell.army.playerType.toString()}
+             // + cell.army.playerType.toString()
+             id={"cell-" + cell.x + '-' + cell.y + '-army-'}
              onClick={() => click(cell)}
              onMouseEnter={() => onCellHover(cell)}
         >

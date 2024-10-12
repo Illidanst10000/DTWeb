@@ -1,18 +1,18 @@
 import {CellType} from "./CellType";
 import {Character} from "./characters/Character";
-import {Army} from "./Army";
-
+import { v4 as uuidv4 } from 'uuid';
 export class Cell {
 
     readonly x: number;
     readonly y: number;
     character: Character | null;
     readonly cellType: CellType;
-    army: Army;
+    playerID: string;
     available: boolean;
-    id: number
+    armyID: string;
+    id: string;
 
-    constructor(x: number, y: number, character: Character | null, cellType: CellType, army: Army) {
+    constructor(x: number, y: number, character: Character | null, cellType: CellType, playerID: string, armyID: string) {
         this.x = x;
         this.y = y;
         this.character = character;
@@ -20,9 +20,10 @@ export class Cell {
             character.charPos.setCell(this)
         }
         this.cellType = cellType;
-        this.army = army;
+        this.playerID = playerID;
         this.available = false;
-        this.id = Math.random();
+        this.armyID = armyID
+        this.id = uuidv4();
     }
 
     public getCharacter() {
@@ -51,9 +52,9 @@ export class Cell {
         return target.cellType !== this.cellType;
     }
 
-    getArmy(): Army {
-        return this.army
-    }
+    // getArmy(): Army {
+    //     return this.army
+    // }
 
 
 

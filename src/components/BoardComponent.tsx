@@ -1,14 +1,11 @@
 import React, { FC, useEffect, useState, useRef } from 'react';
-import CellComponent from "./CellComponent";
 import { Board } from "../models/Board";
 import { Cell } from "../models/Cell";
 import ArmyComponent from "./ArmyComponent";
 import {AnimationProps, ProjectileAnimation, BloodSplashAnimation, BloodSplashAnimationProps} from "./Animations";
-import { PlayerType } from "../models/Player";
 import {AttackType, Character} from "../models/characters/Character";
-import {Army} from "../models/Army";import io from 'socket.io-client';
+import {Army} from "../models/Army";
 
-const socket = io('http://localhost:4000');
 
 interface BoardProps {
     board: Board;
@@ -25,23 +22,11 @@ const BoardComponent: FC<BoardProps> = ({ board, setBoard, currentCell, setCurre
 
     useEffect(() => {
         highlightCells();
-
-        // Подключение к WebSocket и получение состояния игры с сервера
-        socket.on('gameState', (newGameState) => {
-            setBoard(newGameState);
-        });
-
-        return () => {
-            socket.off('gameState');
-        };
     }, [currentCell]);
 
     const updateBoard = () => {
         const newBoard = board.getCopyBoard();
         setBoard(newBoard);
-
-        // Отправка обновленного состояния игры на сервер
-        socket.emit('makeMove', newBoard);
     };
 
     const highlightCells = () => {
@@ -59,7 +44,8 @@ const BoardComponent: FC<BoardProps> = ({ board, setBoard, currentCell, setCurre
 
 
     const handleMovementOrAttack = (currentCell: Cell, targetCell: Cell): void => {
-        const army = currentCell.army;
+        const army = board.getArmyById(currentCell.armyID);
+
         const currentChar = currentCell.character!;
         const targetChar = targetCell.character;
 
@@ -102,12 +88,14 @@ const BoardComponent: FC<BoardProps> = ({ board, setBoard, currentCell, setCurre
     };
 
     const startProjectileAnimation = (sourceCell: Cell, targetCell: Cell, attackType: AttackType) => {
+        const sourceArmy = board.getArmyById(sourceCell.armyID)
+        const targetArmy = board.getArmyById(targetCell.armyID)
         const sourceElement = document.getElementById(
-            `cell-${sourceCell.x}-${sourceCell.y}-army-${sourceCell.army.playerType.toString()}`
+            `cell-${sourceCell.x}-${sourceCell.y}-army-${sourceArmy.playerType.toString()}`
         );
 
         const targetElement = document.getElementById(
-            `cell-${targetCell.x}-${targetCell.y}-army-${targetCell.army.playerType.toString()}`
+            `cell-${targetCell.x}-${targetCell.y}-army-${targetArmy.playerType.toString()}`
         );
 
         if (sourceElement && targetElement) {

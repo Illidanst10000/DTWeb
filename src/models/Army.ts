@@ -2,6 +2,7 @@ import {CellType, MELEE, RANGE, TENT} from "./CellType";
 import {Cell} from "./Cell";
 import {PlayerType} from "./Player";
 import {Character} from "./characters/Character";
+import { v4 as uuidv4 } from 'uuid';
 
 // TODO: Put the constant in the config. Change initCells() in Army to use configuration values.
 
@@ -19,9 +20,13 @@ const rowsOrder = [armyStructure.rangeRow, armyStructure.frontRow]
 export class Army {
     cells: Cell[][] = [];
     playerType: PlayerType;
-    constructor(playerType: PlayerType) {
+    playerID: string;
+    armyID: string;
+    constructor(playerType: PlayerType, playerID: string) {
         this.playerType = playerType;
         this.initCells()
+        this.playerID = playerID;
+        this.armyID = uuidv4();
         console.log(this.cells)
     }
 
@@ -48,7 +53,7 @@ export class Army {
         const row: Cell[] = []
         const cellRow = rowsOrder[yIndex];
         for (let xIndex = 0; xIndex < armyStructure.cells; xIndex++) {
-            row.push(new Cell(xIndex, yIndex, null, cellRow[xIndex], this))
+            row.push(new Cell(xIndex, yIndex, null, cellRow[xIndex], this.playerID, this.armyID))
         }
         this.cells.push(row)
     }
@@ -77,7 +82,7 @@ export class Army {
 
     canMove(currentCell: Cell, targetCell: Cell) {
         if (!currentCell.character) throw new Error("No character in cell")
-        if (currentCell.army !== targetCell.army ) return false
+        if (currentCell.playerID !== targetCell.playerID ) return false
         if (targetCell.character) return false
         if (targetCell.cellType === TENT) return true
 
